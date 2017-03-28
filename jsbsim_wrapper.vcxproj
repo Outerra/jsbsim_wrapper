@@ -65,7 +65,7 @@
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
-      <AdditionalDependencies>jsbsimd.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>jsbsim_d.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <ProjectReference />
   </ItemDefinitionGroup>
