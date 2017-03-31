@@ -180,7 +180,7 @@ void jsbsim_wrapper_impl::update_aircraft_data()
     const FGColumnVector3 vel = _propagate->GetECEFVelocity();
     _aircraft_data.vel_ecef = double3(vel(1) * F2M(), vel(2) * F2M(), vel(3) * F2M());
 
-    const FGColumnVector3 avele = _propagate->GetUVW();
+    const FGColumnVector3 avele = _propagate->GetPQR();
     _aircraft_data.avel_ecef = double3(avele(1), avele(2), avele(3));
 
     const FGColumnVector3 velb = _propagate->GetUVW();
