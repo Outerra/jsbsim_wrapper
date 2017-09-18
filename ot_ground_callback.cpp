@@ -63,6 +63,7 @@ double ot::ground_callback::GetAGLevel(
 
 	if(dist < mmaxdist) {
 		surface *= M2F();
+        vel *= M2F();
 
 		c = FGColumnVector3(surface.x, surface.y, surface.z);
 		n = FGColumnVector3(normal.x, normal.y, normal.z);
