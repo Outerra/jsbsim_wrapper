@@ -233,12 +233,12 @@ bool jsbsim_wrapper_impl::load_aircraft(
     const std::string systems_dir_str(systems_dir.ptr(), systems_dir.len());
     const std::string model_str(model.ptr(), model.len());
 
-    _jsbexec->SetRootDir(root_dir_str);
+    _jsbexec->SetRootDir(SGPath(root_dir_str));
 
     if(!_jsbexec->LoadModel(
-        aircrafts_dir_str,
-        engines_dir_str,
-        systems_dir_str,
+        SGPath(aircrafts_dir_str),
+        SGPath(engines_dir_str),
+        SGPath(systems_dir_str),
         model_str)) {
         return false;
     }
