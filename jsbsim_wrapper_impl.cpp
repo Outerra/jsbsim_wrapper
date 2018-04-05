@@ -206,7 +206,10 @@ void jsbsim_wrapper_impl::update_aircraft_data()
         &normal,
         &surface,
         &cvel,
-        &rvel);
+        &rvel,
+        0,
+        0,
+        0);
 
     if(dist < maxdist)
         _aircraft_data.altitude_agl = float(dist);

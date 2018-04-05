@@ -59,7 +59,10 @@ double ot::ground_callback::GetAGLevel(
         &normal,
         &surface,
         &vel,
-        &rot_vel);
+        &rot_vel,
+        0,
+        0,
+        0);
 
 	if(dist < mmaxdist) {
 		surface *= M2F();
