@@ -33,7 +33,10 @@ public:
 		JSBSim::FGLocation& cont,
 		JSBSim::FGColumnVector3& n,
 		JSBSim::FGColumnVector3& v,
-		JSBSim::FGColumnVector3& w) const override;
+		JSBSim::FGColumnVector3& w,
+        JSBSim::FGColumnVector3& ground_position,
+        double& ground_mass_inverse,
+        JSBSim::FGMatrix33& ground_j_inverse) const override;
 
     double GetTerrainGeoCentRadius(
         double t, const JSBSim::FGLocation& location) const override;

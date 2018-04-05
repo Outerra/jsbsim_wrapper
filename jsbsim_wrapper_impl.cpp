@@ -199,6 +199,10 @@ void jsbsim_wrapper_impl::update_aircraft_data()
     glm::vec3 cvel;
     glm::vec3 rvel;
     glm::dvec3 surface;
+    glm::dvec3 ground_pos;
+    double ground_mass_inv;
+    glm::dmat3x3 ground_j_inv;
+
     float maxdist = float(glm::length(_aircraft_data.pos_ecef));
     float dist = _jsbroot->get_eng()->elevation_over_terrain(
         _aircraft_data.pos_ecef,
@@ -207,9 +211,10 @@ void jsbsim_wrapper_impl::update_aircraft_data()
         &surface,
         &cvel,
         &rvel,
-        0,
-        0,
-        0);
+        &ground_pos,
+        &ground_mass_inv,
+        &ground_j_inv
+    );
 
     if(dist < maxdist)
         _aircraft_data.altitude_agl = float(dist);
