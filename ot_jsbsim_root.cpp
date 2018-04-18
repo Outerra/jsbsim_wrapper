@@ -15,6 +15,15 @@ ot::jsbsim_root::jsbsim_root(ot::eng_interface *eng)
     , _eng(eng)
 {
     ot::jsbsim_root::_inst = this;
+    _cout_buf.open("jsbsim_cout.log", std::fstream::trunc);
+    _cerr_buf.open("jsbsim_cerr.log", std::fstream::trunc);
+
+    if (_cout_buf.is_open() && _cerr_buf.is_open()) {
+        std::cout.rdbuf(_cout_buf.rdbuf());
+        std::cerr.rdbuf(_cerr_buf.rdbuf());
+
+        JSBSim::FGFDMExec::RedirectStdOutput(&_cout_buf,&_cerr_buf);
+    }
 }
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
@@ -26,6 +35,14 @@ ot::jsbsim_root::~jsbsim_root()
     _gc = 0;
     _eng = 0;
     JSBSim::FGLocation::SetGroundCallback(0);
+    
+    if (_cout_buf.is_open()) {
+        _cout_buf.close();
+    }
+
+    if (_cerr_buf.is_open()) {
+        _cerr_buf.close();
+    }
 }
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=

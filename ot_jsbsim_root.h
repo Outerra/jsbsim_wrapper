@@ -4,6 +4,7 @@
 
 #include <comm/singleton.h>
 #include <comm/ref.h>
+#include <fstream>
 
 #include "math/FGLocation.h"
 
@@ -30,6 +31,8 @@ protected:
     uint _counter;                      //< FGFDMExec instance/ID counter
     eng_interface *_eng;
 
+    std::ofstream _cout_buf;
+    std::ofstream _cerr_buf;
 public:
 
     jsbsim_root(ot::eng_interface *eng);

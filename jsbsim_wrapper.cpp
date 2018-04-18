@@ -6,17 +6,25 @@
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
-static FILE *rout=0, *rerr=0;
-
 extern "C" void JSBSIM_WRAPPER_API jsbsim_create_wrapper(
     iref<JSBSim::jsbsim_wrapper> &jsb, ot::eng_interface *eng)
 {
-    if(!rout) {
-        rout = freopen("cout.log", "w", stdout);
-        rerr = freopen("cerr.log", "w", stderr);
-    }
-
 	jsb.create(new JSBSim::jsbsim_wrapper_impl(eng));
+
+    std::cout << "JSBSIM Wrapper created!" << std::endl;
 }
+
+
+/*JSBSim::jsbsim_wrapper::jsbsim_wrapper() {
+    if (!jsbsim_wrapper::_rout) {
+        jsbsim_wrapper::_rout = freopen("jsbsim_cout.log", "w", stdout);
+        jsbsim_wrapper::_rerr = freopen("jsbsim_cerr.log", "w", stderr);
+    }
+}
+
+JSBSim::jsbsim_wrapper::~jsbsim_wrapper() {
+
+}
+*/
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
