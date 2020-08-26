@@ -22,7 +22,7 @@
     <ProjectGuid>{7D6405A4-D681-4E1A-95D9-3438B2970ED3}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>jsbsim_wrapper</RootNamespace>
-    <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
