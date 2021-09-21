@@ -11,17 +11,11 @@ class eng_interface
 {
 public:
 
-	enum ELogTypes {
-		LogInfo,
-		LogWarning,
-		LogDebug,
-		LogError,
-	};
+    //@param text text to log, optionally prefixed with error: warning: info: dbg: etc
+    virtual void write_log(const char* text) = 0;
 
-	virtual void write_log(const coid::charstr &text) = 0;
-    
     virtual double get_earth_radius() const = 0;
-    
+
     virtual float elevation_over_terrain(
         const glm::dvec3 &pos,
         float maxdist,
