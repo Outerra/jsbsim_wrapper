@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.29911.84
+# Visual Studio Version 17
+VisualStudioVersion = 17.3.32922.545
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "jsbsim_wrapper", "jsbsim_wrapper.vcxproj", "{7D6405A4-D681-4E1A-95D9-3438B2970ED3}"
 	ProjectSection(ProjectDependencies) = postProject
@@ -11,7 +11,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "jsbsim_wrapper", "jsbsim_wr
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "JSBSim", "jsbsim.git\JSBSim.vcxproj", "{AF971B4F-3D53-4655-8A03-97E8054DC58B}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "comm_static", "..\comm\_build\msvc\2019\comm_static.vcxproj", "{D2F47060-00C0-4A3C-9888-CF663F14D44D}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "comm_static", "..\comm\_build\msvc\2022\comm_static.vcxproj", "{D2F47060-00C0-4A3C-9888-CF663F14D44D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

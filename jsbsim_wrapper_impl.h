@@ -3,7 +3,7 @@
 #define __JSBSIM_WRAPPER_IMPL_H__
 
 #include "jsbsim_wrapper.h"
-#include "input_output\FGGroundCallback.h"
+#include "input_output/FGGroundCallback.h"
 
 #include <ot/glm/glm_types.h>
 
@@ -32,12 +32,12 @@ class FGGroundReactions;
 class FGPropertyNode;
 
 class jsbsim_wrapper_impl
-	: public jsbsim_wrapper
+    : public jsbsim_wrapper
 {
 protected:
 
     iref<ot::jsbsim_root> _jsbroot;
-	ref<FGFDMExec> _jsbexec;
+    ref<FGFDMExec> _jsbexec;
     FGInitialCondition *_jsbic;
     FGAtmosphere *_atmosphere;
     FGFCS *_FCS;
@@ -49,8 +49,8 @@ protected:
     FGAerodynamics *_aerodynamics;
     FGGroundReactions *_groundReactions;
     FGInertial *_inertial;
-	ot::aircraft_data _aircraft_data;
-	double _time_rest;
+    ot::aircraft_data _aircraft_data;
+    double _time_rest;
     double _earth_radius;
 
     FGPropertyNode *_props;
@@ -66,32 +66,32 @@ protected:
 
 protected:
 
-	static double M2F() { return 3.2808399; }
+    static double M2F() { return 3.2808399; }
     static double F2M() { return 1.0/M2F(); }
 
 public:
 
-	jsbsim_wrapper_impl(ot::eng_interface *eng);
-	virtual ~jsbsim_wrapper_impl();
+    jsbsim_wrapper_impl(ot::eng_interface *eng);
+    virtual ~jsbsim_wrapper_impl();
 
-	void update_aircraft_data();
+    void update_aircraft_data();
 
-	// IMPLEMENTS JSBSim::jsbsim_wrapper
+    // IMPLEMENTS JSBSim::jsbsim_wrapper
 
-	bool load_aircraft(
+    bool load_aircraft(
         const coid::token &root_dir,
-		const coid::token &aircrafts_dir,
-		const coid::token &engines_dir,
-		const coid::token &systems_dir,
-		const coid::token &model) override;
+        const coid::token &aircrafts_dir,
+        const coid::token &engines_dir,
+        const coid::token &systems_dir,
+        const coid::token &model) override;
 
-	void set_initial_condition(
-		const glm::dvec2 &lat_lon,
-		const float altitude,
-		const glm::quat &rot,
-		const float speed_kts,
+    void set_initial_condition(
+        const glm::dvec2 &lat_lon,
+        const float altitude,
+        const glm::quat &rot,
+        const float speed_kts,
         const float engines_thrust,
-		const bool trim) override;
+        const bool trim) override;
 
     void set_initial_condition(
         const glm::dvec2 &lat_lon,
@@ -114,37 +114,37 @@ public:
 
     const ot::aircraft_data* get_aircraft_data() override { return &_aircraft_data; }
 
-	void set_aircraft_data(const ot::aircraft_data *ad) override { _aircraft_data=*ad; }
+    void set_aircraft_data(const ot::aircraft_data *ad) override { _aircraft_data=*ad; }
 
-	void set_controls(const glm::vec4 &controls) override;
+    void set_controls(const glm::vec4 &controls) override;
 
-	void set_engine(const bool on_off) override;
+    void set_engine(const bool on_off) override;
 
-	void set_gear_brakes(const glm::vec3 &brakes) override;
+    void set_gear_brakes(const glm::vec3 &brakes) override;
 
-	void set_flaps(const float angle) override;
+    void set_flaps(const float angle) override;
 
-	void set_engine_throttle(const int engine,const float throttle) override;
+    void set_engine_throttle(const int engine,const float throttle) override;
 
-	void set_engine_mixture(const int engine,const float mixture) override;
+    void set_engine_mixture(const int engine,const float mixture) override;
 
-	void set_elevator_trim(const float trim) override;
+    void set_elevator_trim(const float trim) override;
 
-	void set_aileron_trim(const float trim) override;
+    void set_aileron_trim(const float trim) override;
 
     void set_rudder_trim(const float trim) override;
 
-	void pause() override;
+    void pause() override;
 
-	void resume() override;
+    void resume() override;
 
-	void update(const float dt) override;
+    void update(const float dt) override;
 
     // 0: off, 1: sould be default, 2: full hover mode
-	void set_afcs(const int level) override;
+    void set_afcs(const int level) override;
 
-	bool is_running() const override;
-	
+    bool is_running() const override;
+
     double get_property(const char *name) override;
     void set_property(const char *name, double value) override;
 
