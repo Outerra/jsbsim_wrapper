@@ -33,6 +33,8 @@ protected:
 
     std::ofstream _cout_buf;
     std::ofstream _cerr_buf;
+    std::streambuf* _cout_buf_backup = nullptr;
+    std::streambuf* _cerr_buf_backup = nullptr;
 public:
 
     jsbsim_root(ot::eng_interface *eng);

@@ -19,6 +19,9 @@ ot::jsbsim_root::jsbsim_root(ot::eng_interface *eng)
     _cerr_buf.open("jsbsim_cerr.log", std::fstream::trunc);
 
     if (_cout_buf.is_open() && _cerr_buf.is_open()) {
+        _cout_buf_backup = std::cout.rdbuf();
+        _cerr_buf_backup = std::cerr.rdbuf();
+
         std::cout.rdbuf(_cout_buf.rdbuf());
         std::cerr.rdbuf(_cerr_buf.rdbuf());
 
@@ -43,6 +46,12 @@ ot::jsbsim_root::~jsbsim_root()
     if (_cerr_buf.is_open()) {
         _cerr_buf.close();
     }
+
+    if (_cout_buf_backup)
+        std::cout.rdbuf(_cout_buf_backup);
+    if (_cerr_buf_backup)
+        std::cerr.rdbuf(_cerr_buf_backup);
+
 }
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
