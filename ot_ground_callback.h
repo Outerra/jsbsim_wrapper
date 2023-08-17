@@ -15,32 +15,32 @@ protected:
 
     double _earth_radius;
     double _water_radius;
-	eng_interface *_eng;
+    eng_interface* _eng;
 
 public:
 
-    ground_callback(eng_interface *eng);
+    ground_callback(eng_interface* eng);
     virtual ~ground_callback();
 
-	// IMPLEMENTS JSBSim::FGGroundCallback
+    // IMPLEMENTS JSBSim::FGGroundCallback
 
-	double GetAltitude(const JSBSim::FGLocation& l) const override;
-	
-	double GetAGLevel(
-		double t,
+    double GetAltitude(const JSBSim::FGLocation& l) const override;
+
+    double GetAGLevel(
+        double t,
         double maxdist,
-		const JSBSim::FGLocation& l,
-		JSBSim::FGLocation& cont,
-		JSBSim::FGColumnVector3& n,
-		JSBSim::FGColumnVector3& v,
-		JSBSim::FGColumnVector3& w,
+        const JSBSim::FGLocation& l,
+        JSBSim::FGLocation& cont,
+        JSBSim::FGColumnVector3& n,
+        JSBSim::FGColumnVector3& v,
+        JSBSim::FGColumnVector3& w,
         JSBSim::FGColumnVector3& ground_position,
         double& ground_mass_inverse,
         JSBSim::FGMatrix33& ground_j_inverse) const override;
 
     double GetTerrainGeoCentRadius(
         double t, const JSBSim::FGLocation& location) const override;
-    
+
     double GetSeaLevelRadius(const JSBSim::FGLocation& location) const override;
 };
 

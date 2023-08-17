@@ -1,3 +1,5 @@
+#include <ot/glm/glm_ext.h>
+
 #include "jsbsim_wrapper_impl.h"
 
 #include "ot_jsbsim_root.h"
@@ -36,8 +38,6 @@
 
 #include "ot_eng_interface.h"
 
-#include <ot/glm/glm_ext.h>
-
 using namespace JSBSim;
 
 //const float integration_step = 0.01f;
@@ -49,7 +49,7 @@ const double STEPs = STEPns * 1e-9;
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
-jsbsim_wrapper_impl::jsbsim_wrapper_impl(ot::eng_interface *eng)
+jsbsim_wrapper_impl::jsbsim_wrapper_impl(ot::eng_interface* eng)
     : _jsbroot(ot::jsbsim_root::_inst == 0
         ? new ot::jsbsim_root(eng)
         : ot::jsbsim_root::_inst)
@@ -72,7 +72,7 @@ jsbsim_wrapper_impl::jsbsim_wrapper_impl(ot::eng_interface *eng)
     , _earth_radius(_jsbroot->get_earth_radius())
     , _props(_jsbexec->GetPropertyManager()->GetNode())
 {
-    DASSERT(_jsbexec.get()!=0);
+    DASSERT(_jsbexec.get() != 0);
     //_jsbexec->Setdt(integration_step);
     //_jsbexec->SetGroundCallback(ot::jsbsim_root::get().get_gc()); // set in the jsbsim_root!
 
@@ -98,37 +98,56 @@ void jsbsim_wrapper_impl::update_aircraft_data()
     _aircraft_data.pitch = float(_propagate->GetEuler(2));
     _aircraft_data.roll = float(_propagate->GetEuler(1));
 
-    _aircraft_data.altitude_asl = float(_propagate->GetAltitudeASL()*F2M());
+    _aircraft_data.altitude_asl = float(_propagate->GetAltitudeASL() * F2M());
 
     _aircraft_data.gear_down = _FCS->GetGearCmd() != 0 ? true : false;
 
-    if(_propulsion)
+    if (_propulsion)
     {
-        FGEngine *eng = _propulsion->GetEngine(0);
-        _aircraft_data.engine_rpm = float(eng->GetThruster()->GetRPM());
-        _aircraft_data.engine_throttle = float(_FCS->GetThrottlePos()[0]);
-        _aircraft_data.engine_mixture = float(_FCS->GetMixturePos()[0]);
-        _aircraft_data.engine_running = eng->GetRunning();
+        unsigned int neng = _propulsion->GetNumEngines();
+        if (neng >= ot::aircraft_data::MAX_ENGINES)
+            neng = ot::aircraft_data::MAX_ENGINES;
 
-        switch(eng->GetType()) {
-        case FGEngine::etElectric:
-            break;
-        case FGEngine::etTurbine:
-            _aircraft_data.engine_egt = float(static_cast<FGTurbine*>(eng)->GetEGT());
-            _aircraft_data.engine_ffl = float(static_cast<FGTurbine*>(eng)->getFuelFlow_gph());
-            _aircraft_data.engine_rpm = static_cast<FGTurbine*>(eng)->GetCutoff() == false ? 1.0f : 0.0f;
-            _aircraft_data.engine_mixture = float(_FCS->GetMixturePos()[0]);
-            _aircraft_data.engine_n1 = float(static_cast<FGTurbine*>(eng)->GetN1());
-            _aircraft_data.engine_n2 = float(static_cast<FGTurbine*>(eng)->GetN2());
-            break;
-        case FGEngine::etPiston:
-            _aircraft_data.engine_egt = float(static_cast<FGPiston*>(eng)->GetEGT());
-            _aircraft_data.engine_ffl = float(static_cast<FGPiston*>(eng)->getFuelFlow_gph());
-            break;
+        uint running_engines = 0;
+
+        for (unsigned int i = 0; i < neng; ++i)
+        {
+            FGEngine* eng = _propulsion->GetEngine(i);
+            ot::aircraft_data::engine& data = _aircraft_data.engines[i];
+
+            data.rpm = float(eng->GetThruster()->GetRPM());
+            data.throttle = float(_FCS->GetThrottlePos()[0]);
+            data.mixture = float(_FCS->GetMixturePos()[0]);
+            data.state = eng->GetCranking() ? ot::aircraft_data::engine_state::cranking :
+                eng->GetRunning() ? ot::aircraft_data::engine_state::running :
+                ot::aircraft_data::engine_state::stopped;
+
+            if (data.state > ot::aircraft_data::engine_state::stopped)
+                running_engines++;
+
+            switch (eng->GetType()) {
+            case FGEngine::etElectric:
+                break;
+            case FGEngine::etTurbine:
+                data.rpm = static_cast<FGTurbine*>(eng)->GetCutoff() == false ? 1.0f : 0.0f;
+                data.egt = float(static_cast<FGTurbine*>(eng)->GetEGT());
+                data.ffl = float(static_cast<FGTurbine*>(eng)->getFuelFlow_gph());
+                data.mixture = float(_FCS->GetMixturePos()[0]);
+                data.n1 = float(static_cast<FGTurbine*>(eng)->GetN1());
+                data.n2 = float(static_cast<FGTurbine*>(eng)->GetN2());
+                break;
+            case FGEngine::etPiston:
+                data.rpm = float(static_cast<FGPiston*>(eng)->getRPM());
+                data.egt = float(static_cast<FGPiston*>(eng)->GetEGT());
+                data.ffl = float(static_cast<FGPiston*>(eng)->getFuelFlow_gph());
+                break;
+            }
         }
+
+        _aircraft_data.running_engines = running_engines;
     }
-    else
-        _aircraft_data.engine_running = false;
+    //else
+    //    _aircraft_data.engine_running = false;
 
     _aircraft_data.gear_brakes.x = float(_FCS->GetLBrake());
     _aircraft_data.gear_brakes.y = float(_FCS->GetRBrake());
@@ -143,7 +162,7 @@ void jsbsim_wrapper_impl::update_aircraft_data()
     _aircraft_data.aileron_trim_angle = float(_FCS->GetRollTrimCmd());
     _aircraft_data.rudder_trim_angle = float(_FCS->GetYawTrimCmd());
 
-    const FGLocation &loc_cg = _propagate->GetLocation();
+    const FGLocation& loc_cg = _propagate->GetLocation();
     FGLocation loc = loc_cg.LocalToLocation(_propagate->GetTb2l() * _auxiliary->in.VRPBody);
     //const FGLocation &loc = _auxiliary->GetLocationVRP();
     _aircraft_data.pos_ecef = double3(
@@ -151,7 +170,7 @@ void jsbsim_wrapper_impl::update_aircraft_data()
         loc.Entry(2) * F2M(),
         loc.Entry(3) * F2M());
 
-    _aircraft_data.pos_cg_offset = double3(
+    _aircraft_data.pos_cg_offset = float3(
         (loc_cg(1) - loc.Entry(1)) * F2M(),
         (loc_cg(2) - loc.Entry(2)) * F2M(),
         (loc_cg(3) - loc.Entry(3)) * F2M());
@@ -163,8 +182,8 @@ void jsbsim_wrapper_impl::update_aircraft_data()
         loc_cg.GetLatitudeDeg(),
         loc_cg.GetLongitudeDeg());
 
-    const FGMatrix33 &m = _propagate->GetTb2ec();
-    _aircraft_data.drot_body_ecef =
+    const FGMatrix33& m = _propagate->GetTb2ec();
+    /*_aircraft_data.drot_body_ecef =
         glm::quat_cast(double3x3(
             m(1, 1), m(2, 1), m(3, 1),
             m(1, 2), m(2, 2), m(3, 2),
@@ -175,31 +194,38 @@ void jsbsim_wrapper_impl::update_aircraft_data()
         float(_aircraft_data.drot_body_ecef.w),
         float(_aircraft_data.drot_body_ecef.x),
         float(_aircraft_data.drot_body_ecef.y),
-        float(_aircraft_data.drot_body_ecef.z));
+        float(_aircraft_data.drot_body_ecef.z));*/
+
+    _aircraft_data.rot_body_ecef =
+        glm::quat_cast(float3x3(
+            m(1, 1), m(2, 1), m(3, 1),
+            m(1, 2), m(2, 2), m(3, 2),
+            m(1, 3), m(2, 3), m(3, 3)))
+        * quat(0.0, 0.70710677, 0.70710677, 0.0);
 
     const FGColumnVector3 vel = _propagate->GetECEFVelocity();
-    _aircraft_data.vel_ecef = double3(vel(1) * F2M(), vel(2) * F2M(), vel(3) * F2M());
+    _aircraft_data.vel_ecef = float3(vel(1) * F2M(), vel(2) * F2M(), vel(3) * F2M());
 
     const FGColumnVector3 avele = _propagate->GetPQR();
-    _aircraft_data.avel_ecef = double3(avele(1), avele(2), avele(3));
+    _aircraft_data.avel_ecef = float3(avele(1), avele(2), avele(3));
 
     const FGColumnVector3 velb = _propagate->GetUVW();
-    _aircraft_data.vel_body = double3(velb(1) * F2M(), velb(2) * F2M(), velb(3) * F2M());
+    _aircraft_data.vel_body = float3(velb(1) * F2M(), velb(2) * F2M(), velb(3) * F2M());
 
     const FGColumnVector3 acc = _propagate->GetTb2ec() * _jsbexec->GetAccelerations()->GetBodyAccel();
-    _aircraft_data.acc_body = double3(acc(1) * F2M(), acc(2) * F2M(), acc(3) * F2M());
+    _aircraft_data.acc_body = float3(acc(1) * F2M(), acc(2) * F2M(), acc(3) * F2M());
 
     const FGColumnVector3 avel = _propagate->GetTb2ec() * _propagate->GetPQR();
-    _aircraft_data.avel_body = double3(avel(1), avel(2), avel(3));
+    _aircraft_data.avel_body = float3(avel(1), avel(2), avel(3));
 
     const FGColumnVector3 aacc = _propagate->GetTb2ec() * _jsbexec->GetAccelerations()->GetPQRdot();
-    _aircraft_data.aacc_body = double3(aacc(1), aacc(2), aacc(3));
+    _aircraft_data.aacc_body = float3(aacc(1), aacc(2), aacc(3));
 
-    glm::vec3 normal;
-    glm::vec3 cvel;
-    glm::vec3 rvel;
-    glm::dvec3 surface;
-    glm::dvec3 ground_pos;
+    float3 normal;
+    float3 cvel;
+    float3 rvel;
+    double3 surface;
+    double3 ground_pos;
     double ground_mass_inv;
     glm::dmat3x3 ground_j_inv;
 
@@ -216,7 +242,7 @@ void jsbsim_wrapper_impl::update_aircraft_data()
         &ground_j_inv
     );
 
-    if(dist < maxdist)
+    if (dist < maxdist)
         _aircraft_data.altitude_agl = float(dist);
     else
         _aircraft_data.altitude_agl = -1.0f;
@@ -229,11 +255,11 @@ void jsbsim_wrapper_impl::update_aircraft_data()
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 bool jsbsim_wrapper_impl::load_aircraft(
-    const coid::token &root_dir,
-    const coid::token &aircrafts_dir,
-    const coid::token &engines_dir,
-    const coid::token &systems_dir,
-    const coid::token &model)
+    const coid::token& root_dir,
+    const coid::token& aircrafts_dir,
+    const coid::token& engines_dir,
+    const coid::token& systems_dir,
+    const coid::token& model)
 {
     const std::string root_dir_str(root_dir.ptr(), root_dir.len());
     const std::string aircrafts_dir_str(aircrafts_dir.ptr(), aircrafts_dir.len());
@@ -243,7 +269,7 @@ bool jsbsim_wrapper_impl::load_aircraft(
 
     _jsbexec->SetRootDir(SGPath(root_dir_str));
 
-    if(!_jsbexec->LoadModel(
+    if (!_jsbexec->LoadModel(
         SGPath(aircrafts_dir_str),
         SGPath(engines_dir_str),
         SGPath(systems_dir_str),
@@ -258,7 +284,7 @@ bool jsbsim_wrapper_impl::load_aircraft(
 
 void jsbsim_wrapper_impl::enable_log(bool enable)
 {
-    if(enable)
+    if (enable)
         _jsbexec->EnableOutput();
     else
         _jsbexec->DisableOutput();
@@ -267,9 +293,9 @@ void jsbsim_wrapper_impl::enable_log(bool enable)
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 void jsbsim_wrapper_impl::set_initial_condition(
-    const glm::dvec2 &lat_lon,
+    const glm::dvec2& lat_lon,
     const float altitude,
-    const glm::quat &rot,
+    const glm::quat& rot,
     const float speed_kts,
     const float engines_thrust,
     const bool trim)
@@ -309,10 +335,10 @@ void jsbsim_wrapper_impl::set_initial_condition(
     _jsbexec->RunIC();
     set_engine(is_eng_running);
 
-    if(false && trim && speed_kts>=60.0f) {
+    if (false && trim && speed_kts >= 60.0f) {
         _FCS->SetMixturePos(0, 1.0);
         _FCS->SetThrottlePos(0, 0.80);
-        for(int i = 0; i<100; ++i)
+        for (int i = 0; i < 100; ++i)
             _propulsion->GetEngine(0)->Calculate();
         _jsbexec->DoTrim(tLongitudinal);
         _aircraft_data.trim_successful = _jsbexec->GetTrimStatus();
@@ -321,7 +347,7 @@ void jsbsim_wrapper_impl::set_initial_condition(
     update_aircraft_data();
 
     _prev_pos = _aircraft_data.pos_ecef;
-    _prev_rot = _aircraft_data.drot_body_ecef;
+    _prev_rot = _aircraft_data.rot_body_ecef;
 }
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
@@ -340,15 +366,15 @@ void jsbsim_wrapper_impl::initialize_ic()
 
     update_aircraft_data();
     _prev_pos = _aircraft_data.pos_ecef;
-    _prev_rot = _aircraft_data.drot_body_ecef;
+    _prev_rot = _aircraft_data.rot_body_ecef;
 }
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 void jsbsim_wrapper_impl::set_initial_condition(
-    const glm::dvec2 &lat_lon,
+    const glm::dvec2& lat_lon,
     const float altitude,
-    const float3 &hpr,
+    const float3& hpr,
     const float speed_kts,
     const float engines_thrust,
     const bool trim)
@@ -383,16 +409,16 @@ void jsbsim_wrapper_impl::set_initial_condition(
     update_aircraft_data();
 
     _prev_pos = _aircraft_data.pos_ecef;
-    _prev_rot = _aircraft_data.drot_body_ecef;
+    _prev_rot = _aircraft_data.rot_body_ecef;
 }
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 void jsbsim_wrapper_impl::set_initial_condition(
-    const glm::dvec2 &lat_lon,
+    const glm::dvec2& lat_lon,
     const float altitude,
-    const float3 &hpr,
-    const float3 &vel,
+    const float3& hpr,
+    const float3& vel,
     const float engines_thrust,
     const bool trim)
 {
@@ -402,7 +428,7 @@ void jsbsim_wrapper_impl::set_initial_condition(
     _jsbic->SetPsiRadIC(hpr.x);
     _jsbic->SetThetaRadIC(hpr.y);
     _jsbic->SetPhiRadIC(hpr.z);
-    
+
     //_jsbic->SetVcalibratedKtsIC(speed_kts);
 
     _jsbic->SetLatitudeRadIC(glm::radians(lat_lon.x));
@@ -435,14 +461,14 @@ void jsbsim_wrapper_impl::set_initial_condition(
     update_aircraft_data();
 
     _prev_pos = _aircraft_data.pos_ecef;
-    _prev_rot = _aircraft_data.drot_body_ecef;
+    _prev_rot = _aircraft_data.rot_body_ecef;
 }
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
-void jsbsim_wrapper_impl::set_controls(const glm::vec4 &controls)
+void jsbsim_wrapper_impl::set_controls(const glm::vec4& controls)
 {
-    if(_jsbexec->Holding())
+    if (_jsbexec->Holding())
         return;
 
     _FCS->SetDeCmd(controls.x);
@@ -455,12 +481,12 @@ void jsbsim_wrapper_impl::set_controls(const glm::vec4 &controls)
 
 void jsbsim_wrapper_impl::set_engine(const bool on_off)
 {
-    if(!_propulsion)
+    if (!_propulsion)
         return;
 
     _propulsion->SetActiveEngine(-1);
 
-    if(on_off) {
+    if (on_off) {
         _propulsion->SetCutoff(0);
         _propulsion->SetMagnetos(1);
         _propulsion->SetStarter(1);
@@ -475,7 +501,7 @@ void jsbsim_wrapper_impl::set_engine(const bool on_off)
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
-void jsbsim_wrapper_impl::set_gear_brakes(const glm::vec3 &brakes)
+void jsbsim_wrapper_impl::set_gear_brakes(const glm::vec3& brakes)
 {
     _FCS->SetLBrake(brakes.x);
     _FCS->SetCBrake(brakes.y);
@@ -541,7 +567,7 @@ void jsbsim_wrapper_impl::resume() { _jsbexec->Resume(); }
 
 void jsbsim_wrapper_impl::update(const float dt)
 {
-    if(dt == 0.0f)
+    if (dt == 0.0f)
         return;
 
     const double step_time = dt + _time_rest;
@@ -549,22 +575,22 @@ void jsbsim_wrapper_impl::update(const float dt)
 
     bool step_made = false;
 
-    while(t >= STEPs) {
+    while (t >= STEPs) {
         _jsbexec->Run();
         t -= STEPs;
         step_made = true;
     }
 
-    if(step_made) {
-        const FGMatrix33 &m = _propagate->GetTb2ec();
+    if (step_made) {
+        const FGMatrix33& m = _propagate->GetTb2ec();
         _prev_rot =
-            glm::quat_cast(double3x3(
+            glm::quat_cast(float3x3(
                 m(1, 1), m(2, 1), m(3, 1),
                 m(1, 2), m(2, 2), m(3, 2),
                 m(1, 3), m(2, 3), m(3, 3)))
-            * dquat(0.0, 0.70710677, 0.70710677, 0.0);
+            * quat(0.0, 0.70710677, 0.70710677, 0.0);
 
-        const FGLocation &loc = _auxiliary->GetLocationVRP();
+        const FGLocation& loc = _auxiliary->GetLocationVRP();
         _prev_pos = double3(
             loc.Entry(1) * F2M(),
             loc.Entry(2) * F2M(),
@@ -572,8 +598,8 @@ void jsbsim_wrapper_impl::update(const float dt)
 
         FGColumnVector3 vel = _propagate->GetTl2ec() * _propagate->GetVel();
 
-        _prev_vel = double3(vel(1), vel(2), vel(3));
-        _prev_vel *= F2M();
+        const double c = F2M();
+        _prev_vel = double3(vel(1) * c, vel(2) * c, vel(3) * c);
 
         FGColumnVector3 pqr = _propagate->GetPQR();
         _prev_pqr = double3(pqr(1), pqr(2), pqr(3));;
@@ -585,20 +611,17 @@ void jsbsim_wrapper_impl::update(const float dt)
     // update aircraft_data structure
     update_aircraft_data();
 
-    if(step_made) {
+    if (step_made) {
         //_accum_vel = _aircraft_data.vel_ecef;
         //_accum_avel = _aircraft_data.avel_ecef;
     }
 
     _time_rest = t;
 
-    {
-        _aircraft_data.drot_body_ecef =
-            glm::slerp(_prev_rot, _aircraft_data.drot_body_ecef, 1.0 + (t / STEPs), true);
+    _aircraft_data.rot_body_ecef = glm::slerp(_prev_rot, _aircraft_data.rot_body_ecef, 1.0f + float(t / STEPs), true);
 
-        const double len = glm::length(_aircraft_data.drot_body_ecef);
-        _aircraft_data.drot_body_ecef *= 1.0 / len;
-    }
+    const float len = glm::length(_aircraft_data.rot_body_ecef);
+    _aircraft_data.rot_body_ecef *= 1.0f / len;
 
     // EXTRAPOLATE POSITION FROM THE VELOCITY
 
@@ -606,20 +629,14 @@ void jsbsim_wrapper_impl::update(const float dt)
     const double3 pos_correction = _prev_vel * (STEPs + t);
 
     _aircraft_data.pos_ecef += pos_correction;
-    _aircraft_data.vel_ecef = _prev_vel;
-
-    _aircraft_data.rot_body_ecef = quat(
-        float(_aircraft_data.drot_body_ecef.w),
-        float(_aircraft_data.drot_body_ecef.x),
-        float(_aircraft_data.drot_body_ecef.y),
-        float(_aircraft_data.drot_body_ecef.z));
+    _aircraft_data.vel_ecef = float3(_prev_vel);
 }
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 void jsbsim_wrapper_impl::set_afcs(const int level)
 {
-    switch(level) {
+    switch (level) {
     case 2:
         set_property("ap/afcs/x-lat-trim", -0.0308);
         set_property("ap/afcs/x-lon-trim", 0.025);
@@ -627,7 +644,7 @@ void jsbsim_wrapper_impl::set_afcs(const int level)
         set_property("ap/afcs/psi-trim-rad", _propagate->GetEuler(3));
         set_property("ap/afcs/theta-trim-rad", 0.0);
         set_property("ap/afcs/phi-trim-rad", 0.0);
-        set_property("ap/afcs/h-agl-trim-ft", _aircraft_data.altitude_agl*M2F());
+        set_property("ap/afcs/h-agl-trim-ft", _aircraft_data.altitude_agl * M2F());
 
         set_property("ap/afcs/yaw-channel-active-norm", 1.0);
         set_property("ap/afcs/pitch-channel-active-norm", 1.0);
@@ -665,14 +682,14 @@ bool jsbsim_wrapper_impl::is_running() const { return !_jsbexec->Holding(); }
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
-double jsbsim_wrapper_impl::get_property(const char *name)
+double jsbsim_wrapper_impl::get_property(const char* name)
 {
     return _props->GetDouble(name);
 }
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
-void jsbsim_wrapper_impl::set_property(const char *name, double value)
+void jsbsim_wrapper_impl::set_property(const char* name, double value)
 {
     _props->SetDouble(name, value);
 }
@@ -697,12 +714,12 @@ float3 jsbsim_wrapper_impl::get_gear_contact_point(const uint idx)
 {
     const uint n = _jsbexec->GetGroundReactions()->GetNumGearUnits();
 
-    if(idx < n) {
-        FGLGear * const gear = _jsbexec->GetGroundReactions()->GetGearUnit(idx);
+    if (idx < n) {
+        FGLGear* const gear = _jsbexec->GetGroundReactions()->GetGearUnit(idx);
         return float3(
             gear->GetLocationY(),
             -gear->GetLocationX(),
-            gear->GetLocationZ())  * 0.0254f;
+            gear->GetLocationZ()) * 0.0254f;
     }
 
     return float3();

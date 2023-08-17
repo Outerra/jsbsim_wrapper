@@ -8,7 +8,7 @@ ot::jsbsim_root* ot::jsbsim_root::_inst = 0;
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
-ot::jsbsim_root::jsbsim_root(ot::eng_interface *eng)
+ot::jsbsim_root::jsbsim_root(ot::eng_interface* eng)
     : _gc(new ground_callback(eng))
     , _jsbexec(new JSBSim::FGFDMExec(_gc))
     , _counter(0)
@@ -25,7 +25,7 @@ ot::jsbsim_root::jsbsim_root(ot::eng_interface *eng)
         std::cout.rdbuf(_cout_buf.rdbuf());
         std::cerr.rdbuf(_cerr_buf.rdbuf());
 
-        JSBSim::FGFDMExec::RedirectStdOutput(&_cout_buf,&_cerr_buf);
+        JSBSim::FGFDMExec::RedirectStdOutput(&_cout_buf, &_cerr_buf);
     }
 }
 
@@ -38,7 +38,7 @@ ot::jsbsim_root::~jsbsim_root()
     _gc = 0;
     _eng = 0;
     JSBSim::FGLocation::SetGroundCallback(0);
-    
+
     if (_cout_buf.is_open()) {
         _cout_buf.close();
     }

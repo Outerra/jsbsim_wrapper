@@ -7,7 +7,7 @@
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 extern "C" void JSBSIM_WRAPPER_API jsbsim_create_wrapper(
-    iref<JSBSim::jsbsim_wrapper> &jsb, ot::eng_interface *eng)
+    iref<JSBSim::jsbsim_wrapper> &jsb, ot::eng_interface * eng)
 {
     jsb.create(new JSBSim::jsbsim_wrapper_impl(eng));
 

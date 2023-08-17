@@ -9,12 +9,12 @@
 #include "math/FGLocation.h"
 
 namespace JSBSim {
-    class FGFDMExec;
-    class FGPropertyManager;
+class FGFDMExec;
+class FGPropertyManager;
 }
 
 namespace ot {
-    
+
 class ground_callback;
 class eng_interface;
 
@@ -27,9 +27,9 @@ public:
 protected:
 
     JSBSim::FGGroundCallback_ptr _gc;   //< ground callback for collision detection
-	ref<JSBSim::FGFDMExec> _jsbexec;    //< root FGFDMExec
+    ref<JSBSim::FGFDMExec> _jsbexec;    //< root FGFDMExec
     uint _counter;                      //< FGFDMExec instance/ID counter
-    eng_interface *_eng;
+    eng_interface* _eng;
 
     std::ofstream _cout_buf;
     std::ofstream _cerr_buf;
@@ -37,7 +37,7 @@ protected:
     std::streambuf* _cerr_buf_backup = nullptr;
 public:
 
-    jsbsim_root(ot::eng_interface *eng);
+    jsbsim_root(ot::eng_interface* eng);
     ~jsbsim_root();
 
     bool is_initialized() const { return _eng != 0; }

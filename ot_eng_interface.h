@@ -17,13 +17,13 @@ public:
     virtual double get_earth_radius() const = 0;
 
     virtual float elevation_over_terrain(
-        const glm::dvec3 &pos,
+        const glm::dvec3& pos,
         float maxdist,
-        glm::vec3 *normal,
-        glm::dvec3 *surface,
-        glm::vec3 *v,
-        glm::vec3 *w,
-        glm::dvec3 *ground_pos,
+        glm::vec3* normal,
+        glm::dvec3* surface,
+        glm::vec3* v,
+        glm::vec3* w,
+        glm::dvec3* ground_pos,
         double* ground_mass_inv,
         glm::dmat3x3* ground_j_inv) const = 0;
 };
