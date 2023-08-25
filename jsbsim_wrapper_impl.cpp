@@ -251,8 +251,11 @@ void jsbsim_wrapper_impl::update_aircraft_data()
 
 
 ///////////////////////////////////
+    uint num = get_num_contact_points(false);
 
-    for (uint i = 0; i < get_num_contact_points(false); i++)
+    _aircraft_data.gears.realloc(num);
+
+        for (uint i = 0; i < num; i++)
     {
         JSBSim::FGLGear* wheel = _jsbexec->GetGroundReactions()->GetGearUnit(i);
         ot::aircraft_data::gear& geardata = _aircraft_data.gears[i];
