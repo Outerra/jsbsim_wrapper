@@ -38,6 +38,7 @@
 
 #include "ot_eng_interface.h"
 
+
 using namespace JSBSim;
 
 //const float integration_step = 0.01f;
@@ -246,6 +247,23 @@ void jsbsim_wrapper_impl::update_aircraft_data()
         _aircraft_data.altitude_agl = float(dist);
     else
         _aircraft_data.altitude_agl = -1.0f;
+
+
+
+///////////////////////////////////
+
+    for (uint i = 0; i < get_num_contact_points(false); i++)
+    {
+        JSBSim::FGLGear* wheel = _jsbexec->GetGroundReactions()->GetGearUnit(i);
+        ot::aircraft_data::gear& geardata = _aircraft_data.gears[i];
+        geardata.steer_type = get_steer_type(i);
+        geardata.contact_point_pos = get_contact_point_pos(i);
+        geardata.axis_velocity_x = get_wheel_axis_vel(i, 0);
+        geardata.axis_velocity_y = get_wheel_axis_vel(i, 1);
+        geardata.axis_velocity_z = get_wheel_axis_vel(i, 2);
+
+    }
+   
 }
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
@@ -348,6 +366,7 @@ void jsbsim_wrapper_impl::set_initial_condition(
 
     _prev_pos = _aircraft_data.pos_ecef;
     _prev_rot = _aircraft_data.rot_body_ecef;
+
 }
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
@@ -702,27 +721,137 @@ void jsbsim_wrapper_impl::set_gear(const bool down)
 }
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-
-uint jsbsim_wrapper_impl::get_num_gear_contact_point()
+//if bool parameter is false, return all contact points ( "BOGEY" (on gears) and "STRUCTURE" (on wings) )
+//if bool parameter is true, return only gear/bogey contact points
+uint jsbsim_wrapper_impl::get_num_contact_points(bool gearsonly)
 {
-    return _jsbexec->GetGroundReactions()->GetNumGearUnits();
+    if (gearsonly)
+    {
+        int gearcount = 0;
+
+        for(int i = 0; i < _jsbexec->GetGroundReactions()->GetNumGearUnits(); i++)
+        {
+            gearcount += _jsbexec->GetGroundReactions()->GetGearUnit(i)->IsBogey();
+        }
+        return gearcount;
+    }
+    else
+    {
+        return _jsbexec->GetGroundReactions()->GetNumGearUnits();
+    }
 }
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
-float3 jsbsim_wrapper_impl::get_gear_contact_point(const uint idx)
+float3 jsbsim_wrapper_impl::get_contact_point_pos(const uint idx)
 {
     const uint n = _jsbexec->GetGroundReactions()->GetNumGearUnits();
 
     if (idx < n) {
         FGLGear* const gear = _jsbexec->GetGroundReactions()->GetGearUnit(idx);
-        return float3(
-            gear->GetLocationY(),
-            -gear->GetLocationX(),
-            gear->GetLocationZ()) * 0.0254f;
+        quat georot = geomob->get_rot();
+        double3 geopos = geomob->get_pos();
+        float3 gearloc = { gear->GetLocationY(), - gear->GetLocationX(), gear->GetLocationZ()};
+        //from inch to meters
+        gearloc *= 0.0254f;
+        //change the original rotation, to the object rotation
+        glm::vec3 newgearloc = glm::rotate(georot, glm::vec3(gearloc));
+        //gear location is local, therefore add game object location
+        newgearloc += {geopos.x, geopos.y, geopos.z};
+
+        return newgearloc;
     }
 
     return float3();
+}
+
+//uint id = wheel id
+//returned steer types: 0 - steerable  ; 1 - fix, 2- caster 
+uint jsbsim_wrapper_impl::get_steer_type(uint id)
+{
+    int steer_type;
+    const uint n = _jsbexec->GetGroundReactions()->GetNumGearUnits();
+
+    if (id < n)
+    {
+        steer_type = _jsbexec->GetGroundReactions()->GetGearUnit(id)->GetSteerType();
+        return steer_type;
+    }
+
+    return uint();
+}
+
+// 1.param = for which wheel you want to get the axis velocity; 2.param = axis, around which you want the rotation velocity;
+// uint axis_id 0 = X (pitch); axis_id 1 = Y (roll); axis_id 2 = Z (yaw)
+float jsbsim_wrapper_impl::get_wheel_axis_vel(uint wheel_id, uint axis_id)
+{
+    //because the GetWheelVel() parameter is later subtracted by 1..... 
+    axis_id += 1;
+    const uint n = _jsbexec->GetGroundReactions()->GetNumGearUnits();
+
+    if (wheel_id < n)
+    {
+        return _jsbexec->GetGroundReactions()->GetGearUnit(wheel_id)->GetWheelVel(axis_id);
+    }
+
+   return float();
+}
+
+ const coid::charstr * jsbsim_wrapper_impl::get_contact_point_name(uint id)
+{
+    const uint n = _jsbexec->GetGroundReactions()->GetNumGearUnits();
+
+    if (id < n)
+    {
+        wheel_name = _jsbexec->GetGroundReactions()->GetGearUnit(id)->GetName().c_str();
+        const coid::charstr* wheel_name_ptr = &wheel_name;
+
+        return wheel_name_ptr;
+    }
+ return nullptr;
+}
+
+
+//for now, the shown axis rotations (visual sketch representation) are based on the geomob rotation, not jsbsim....
+void jsbsim_wrapper_impl::show_contact_point(uint id)
+{
+    const uint n = _jsbexec->GetGroundReactions()->GetNumGearUnits();
+    if (id < n) 
+    {
+        uint group_id = sketch->create_group();
+        uint canvas_id = sketch->create_canvas(group_id, { 0,0,0 });
+
+        sketch->make_canvas_active(canvas_id);
+        sketch->set_xray_mode(true);
+
+        //to rotate sketch depending on the wheel steering rotation
+        float steer_angle = _jsbexec->GetGroundReactions()->GetGearUnit(id)->GetSteerAngleDeg();
+        quat steer_rot = glm::make_quat_z(steer_angle);
+
+        float3 point_loc = get_contact_point_pos(id);
+
+        float3 offset = { 0,0,0 };
+        float3 x_axis = { 1,0,0 };
+        float3 y_axis = { 0,1,0 };
+        float3 z_axis = { 0,0,1 };
+
+        sketch->set_position((double3)point_loc);
+        sketch->set_rotation(geomob->get_rot());
+
+        sketch->set_color({ 255,0,0 });
+        sketch->draw_line(offset, true);
+        sketch->draw_line(offset + steer_rot * x_axis);
+
+        sketch->set_color({ 0,255,0 });
+        sketch->draw_line(offset, true);
+        sketch->draw_line(offset + steer_rot * y_axis);
+
+        sketch->set_color({ 0,0,255 });
+        sketch->draw_line(offset, true);
+        sketch->draw_line(offset + steer_rot * z_axis);
+
+        sketch->delete_group(group_id);
+    }
 }
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
