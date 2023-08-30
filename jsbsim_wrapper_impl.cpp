@@ -251,23 +251,26 @@ void jsbsim_wrapper_impl::update_aircraft_data()
 
 
 ///////////////////////////////////
+    
+
     uint num = get_num_contact_points(false);
 
     _aircraft_data.gears.realloc(num);
-
-        for (uint i = 0; i < num; i++)
+    
+    for (uint i = 0; i < num; i++)
     {
         JSBSim::FGLGear* wheel = _jsbexec->GetGroundReactions()->GetGearUnit(i);
         ot::aircraft_data::gear& geardata = _aircraft_data.gears[i];
         geardata.steer_type = get_steer_type(i);
         geardata.contact_point_pos = get_contact_point_pos(i);
-        geardata.axis_velocity_x = get_wheel_axis_vel(i, 0);
-        geardata.axis_velocity_y = get_wheel_axis_vel(i, 1);
-        geardata.axis_velocity_z = get_wheel_axis_vel(i, 2);
-
+        geardata.axis_velocities = get_wheel_axis_vel(i);
+        if (geardata.wheel_name.is_empty())
+        {
+            geardata.wheel_name = wheel->GetName().c_str();
+        }
     }
-   
 }
+
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 //
@@ -746,26 +749,26 @@ uint jsbsim_wrapper_impl::get_num_contact_points(bool gearsonly)
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
-float3 jsbsim_wrapper_impl::get_contact_point_pos(const uint idx)
+double3 jsbsim_wrapper_impl::get_contact_point_pos(const uint idx)
 {
     const uint n = _jsbexec->GetGroundReactions()->GetNumGearUnits();
 
     if (idx < n) {
         FGLGear* const gear = _jsbexec->GetGroundReactions()->GetGearUnit(idx);
         quat georot = geomob->get_rot();
-        double3 geopos = geomob->get_pos();
+        double3 pos = geomob->get_pos();
         float3 gearloc = { gear->GetLocationY(), - gear->GetLocationX(), gear->GetLocationZ()};
         //from inch to meters
         gearloc *= 0.0254f;
         //change the original rotation, to the object rotation
         glm::vec3 newgearloc = glm::rotate(georot, glm::vec3(gearloc));
         //gear location is local, therefore add game object location
-        newgearloc += {geopos.x, geopos.y, geopos.z};
+        pos += {newgearloc.x, newgearloc.y, newgearloc.z};
 
-        return newgearloc;
+        return pos;
     }
 
-    return float3();
+    return double3();
 }
 
 //uint id = wheel id
@@ -784,77 +787,21 @@ uint jsbsim_wrapper_impl::get_steer_type(uint id)
     return uint();
 }
 
-// 1.param = for which wheel you want to get the axis velocity; 2.param = axis, around which you want the rotation velocity;
-// uint axis_id 0 = X (pitch); axis_id 1 = Y (roll); axis_id 2 = Z (yaw)
-float jsbsim_wrapper_impl::get_wheel_axis_vel(uint wheel_id, uint axis_id)
+// 1.param = for which wheel you want to get the axis velocity
+float3 jsbsim_wrapper_impl::get_wheel_axis_vel(uint wheel_id)
 {
-    //because the GetWheelVel() parameter is later subtracted by 1..... 
-    axis_id += 1;
     const uint n = _jsbexec->GetGroundReactions()->GetNumGearUnits();
 
     if (wheel_id < n)
     {
-        return _jsbexec->GetGroundReactions()->GetGearUnit(wheel_id)->GetWheelVel(axis_id);
+        float3 velocities;
+        velocities.x = _jsbexec->GetGroundReactions()->GetGearUnit(wheel_id)->GetWheelVel(1);
+        velocities.y = _jsbexec->GetGroundReactions()->GetGearUnit(wheel_id)->GetWheelVel(2);
+        velocities.z = _jsbexec->GetGroundReactions()->GetGearUnit(wheel_id)->GetWheelVel(3);
+        return velocities;
     }
 
-   return float();
-}
-
- const coid::charstr * jsbsim_wrapper_impl::get_contact_point_name(uint id)
-{
-    const uint n = _jsbexec->GetGroundReactions()->GetNumGearUnits();
-
-    if (id < n)
-    {
-        wheel_name = _jsbexec->GetGroundReactions()->GetGearUnit(id)->GetName().c_str();
-        const coid::charstr* wheel_name_ptr = &wheel_name;
-
-        return wheel_name_ptr;
-    }
- return nullptr;
-}
-
-
-//for now, the shown axis rotations (visual sketch representation) are based on the geomob rotation, not jsbsim....
-void jsbsim_wrapper_impl::show_contact_point(uint id)
-{
-    const uint n = _jsbexec->GetGroundReactions()->GetNumGearUnits();
-    if (id < n) 
-    {
-        uint group_id = sketch->create_group();
-        uint canvas_id = sketch->create_canvas(group_id, { 0,0,0 });
-
-        sketch->make_canvas_active(canvas_id);
-        sketch->set_xray_mode(true);
-
-        //to rotate sketch depending on the wheel steering rotation
-        float steer_angle = _jsbexec->GetGroundReactions()->GetGearUnit(id)->GetSteerAngleDeg();
-        quat steer_rot = glm::make_quat_z(steer_angle);
-
-        float3 point_loc = get_contact_point_pos(id);
-
-        float3 offset = { 0,0,0 };
-        float3 x_axis = { 1,0,0 };
-        float3 y_axis = { 0,1,0 };
-        float3 z_axis = { 0,0,1 };
-
-        sketch->set_position((double3)point_loc);
-        sketch->set_rotation(geomob->get_rot());
-
-        sketch->set_color({ 255,0,0 });
-        sketch->draw_line(offset, true);
-        sketch->draw_line(offset + steer_rot * x_axis);
-
-        sketch->set_color({ 0,255,0 });
-        sketch->draw_line(offset, true);
-        sketch->draw_line(offset + steer_rot * y_axis);
-
-        sketch->set_color({ 0,0,255 });
-        sketch->draw_line(offset, true);
-        sketch->draw_line(offset + steer_rot * z_axis);
-
-        sketch->delete_group(group_id);
-    }
+   return float3();
 }
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=

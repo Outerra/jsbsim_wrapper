@@ -54,6 +54,10 @@ protected:
     FGAerodynamics* _aerodynamics;
     FGGroundReactions* _groundReactions;
     FGInertial* _inertial;
+    
+    /// /////////////////////
+    
+    //FGEngine* _engine;
 
     ot::aircraft_data _aircraft_data;
     double _time_rest;
@@ -76,7 +80,6 @@ protected:
     iref<ot::world> world = ot::world::get();
     iref<ot::object> object = world->get_object(0);
     iref<ot::geomob> geomob = object->get_geomob(0);
-    coid::charstr wheel_name;
 
 protected:
 
@@ -165,16 +168,13 @@ public:
     void set_gear(const bool down) override;
 
     uint get_num_contact_points(bool gearsonly) override;
-    float3 get_contact_point_pos(const uint idx) override;
+    double3 get_contact_point_pos(const uint idx) override;
 
     void enable_log(bool enable) override;
 
     //////////////////////////
     uint get_steer_type(uint id) override;
-    float get_wheel_axis_vel(uint wheel_id, uint axis_id) override;
-    const coid::charstr * get_contact_point_name(uint id) override;
-    void show_contact_point(uint id) override;
- 
+    float3 get_wheel_axis_vel(uint wheel_id) override;
 };
 
 } // end of namespace JSBSim

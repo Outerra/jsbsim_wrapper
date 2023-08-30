@@ -93,15 +93,13 @@ public:
     virtual void set_gear(const bool down) = 0;
 
     virtual uint get_num_contact_points(bool gearsonly) = 0;
-    virtual float3 get_contact_point_pos(const uint idx) = 0;
+    virtual double3 get_contact_point_pos(const uint idx) = 0;
 
     virtual void enable_log(bool enable) = 0;
 
     /// ////////////////////////////
     virtual uint get_steer_type(uint id) = 0;
-    virtual float get_wheel_axis_vel(uint wheel_id, uint axis_id) = 0;
-    virtual const  coid::charstr * get_contact_point_name(uint id) = 0;
-    virtual void show_contact_point(uint id) = 0;
+    virtual float3 get_wheel_axis_vel(uint wheel_id) = 0;
 };
 
 } // end of namespace
