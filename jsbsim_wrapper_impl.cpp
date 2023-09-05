@@ -249,26 +249,446 @@ void jsbsim_wrapper_impl::update_aircraft_data()
         _aircraft_data.altitude_agl = -1.0f;
 
 
+    //////////// Ground reactions & Gears
 
-///////////////////////////////////
-    
+    ot::aircraft_data::GndReactions GndReactdata;
 
-    uint num = get_num_contact_points(false);
+    GndReactdata.BumpHeight = _groundReactions->GetBumpHeight();
+    GndReactdata.Bumpiness = _groundReactions->GetBumpiness();
+    GndReactdata.SteeringCmd = _groundReactions->GetDsCmd();
+    GndReactdata.GndreactMaximumForce = _groundReactions->GetMaximumForce();
+    GndReactdata.RollingFrictFactor = _groundReactions->GetRollingFFactor();
+    GndReactdata.SurfaceSolidStatus = _groundReactions->GetSolid();
+    GndReactdata.StaticFrictFactor = _groundReactions->GetStaticFFactor();
+    GndReactdata.WOW = _groundReactions->GetWOW();
+    GndReactdata.GndreactForces = { _groundReactions->GetForces().Entry(1), _groundReactions->GetForces().Entry(2) ,_groundReactions->GetForces().Entry(3) };
+    GndReactdata.GndreactMoments = { _groundReactions->GetMoments().Entry(1), _groundReactions->GetMoments().Entry(2) , _groundReactions->GetMoments().Entry(3) };
 
-    _aircraft_data.gears.realloc(num);
-    
-    for (uint i = 0; i < num; i++)
+    uint NumCP = get_num_contact_points(false);
+    _aircraft_data.Gears.realloc(NumCP);
+
+    for (uint i = 0; i < NumCP; i++)
     {
-        JSBSim::FGLGear* wheel = _jsbexec->GetGroundReactions()->GetGearUnit(i);
-        ot::aircraft_data::gear& geardata = _aircraft_data.gears[i];
-        geardata.steer_type = get_steer_type(i);
-        geardata.contact_point_pos = get_contact_point_pos(i);
-        geardata.axis_velocities = get_wheel_axis_vel(i);
-        if (geardata.wheel_name.is_empty())
+        ot::aircraft_data::Gear& Geardata = _aircraft_data.Gears[i];
+        JSBSim::FGLGear* wheel = _groundReactions->GetGearUnit(i);
+
+        Geardata.SteerType = get_steer_type(i);
+        Geardata.ContactPointPos = get_contact_point_pos(i);
+        Geardata.AxisVelocities = get_wheel_axis_vel(i);
+        Geardata.GearWOW = wheel->GetWOW();
+        Geardata.GearAnglesToBody = { wheel->GetAnglesToBody().Entry(1),wheel->GetAnglesToBody().Entry(2) ,wheel->GetAnglesToBody().Entry(3) };
+        Geardata.GearBodyForces = { wheel->GetBodyForces().Entry(1),wheel->GetBodyForces().Entry(2) ,wheel->GetBodyForces().Entry(3) };
+        Geardata.GearBrakeGroup = wheel->GetBrakeGroup();
+        Geardata.GearCompForce = wheel->GetCompForce();
+        Geardata.GearCompLength = wheel->GetCompLen();
+        Geardata.GearPos = wheel->GetGearUnitPos();
+        Geardata.LocalGear = { wheel->GetLocalGear().Entry(1),wheel->GetLocalGear().Entry(2) ,wheel->GetLocalGear().Entry(3) };
+        Geardata.GearMoments = { wheel->GetMoments().Entry(1),wheel->GetMoments().Entry(2) ,wheel->GetMoments().Entry(3) };
+        Geardata.GearPitch = wheel->GetPitch();
+        Geardata.GearYaw = wheel->GetYaw();
+        Geardata.GearisRetractable = wheel->GetRetractable();
+        Geardata.GearStaticFrictCoeff = wheel->GetstaticFCoeff();
+        Geardata.GearSteerAngleDeg = wheel->GetSteerAngleDeg();
+        Geardata.GearSteerNorm = wheel->GetSteerNorm();
+        Geardata.GearTransformType = wheel->GetTransformType();
+        Geardata.GearRollForce = wheel->GetWheelRollForce();
+        Geardata.GearRollVel = wheel->GetWheelRollVel();
+        Geardata.GearSideForce = wheel->GetWheelSideForce();
+        Geardata.GearSideVel = wheel->GetWheelSideVel();
+        Geardata.GearSlipAngle = wheel->GetWheelSlipAngle();
+        Geardata.GearVelX = wheel->GetWheelVel(1);
+        Geardata.GearVelY = wheel->GetWheelVel(2);
+        Geardata.GearVelZ = wheel->GetWheelVel(3);
+        Geardata.GearisBogey = wheel->IsBogey();
+
+        if (Geardata.WheelName.is_empty())
         {
-            geardata.wheel_name = wheel->GetName().c_str();
+            Geardata.WheelName = wheel->GetName().c_str();
         }
     }
+
+
+    //////////// FCS
+
+    ot::aircraft_data::FCS FCSdata;
+
+    FCSdata.LeftAileronPosRad = _FCS->GetDaLPos();
+    FCSdata.RightAileronPosRad = _FCS->GetDaRPos();
+    FCSdata.ElevatorPosRad = _FCS->GetDePos();
+    FCSdata.FlapsPosRad = _FCS->GetDfPos();
+    FCSdata.RudderPosRad = _FCS->GetDrPos();
+    FCSdata.SpeedBrakePosRad = _FCS->GetDsbPos();
+    FCSdata.SpoilerPosRad = _FCS->GetDspPos();
+    FCSdata.RightBrakePos = _FCS->GetRBrake();
+    FCSdata.LeftBrakePos = _FCS->GetLBrake();
+    FCSdata.CenterBrakePos = _FCS->GetCBrake();
+    // tailhook position  0 - up,  1 - down
+    FCSdata.TailhookPos = _FCS->GetTailhookPos();
+    //wing fold position 0 - unfolded, 1 - folded
+    FCSdata.WingFoldPos = _FCS->GetWingFoldPos();
+    FCSdata.TrimStatus = _FCS->GetTrimStatus();
+    FCSdata.ChannelDeltaT = _FCS->GetChannelDeltaT();
+    FCSdata.AileronCmd = _FCS->GetDaCmd();
+    FCSdata.ElevatorCmd = _FCS->GetDeCmd();
+    FCSdata.FlapsCmd = _FCS->GetDfCmd();
+    FCSdata.RudderCmd = _FCS->GetDrCmd();
+    FCSdata.SpeedbrakeCmd = _FCS->GetDsbCmd();
+    FCSdata.SteeringCmd = _FCS->GetDsCmd();
+    FCSdata.SpoilerCmd = _FCS->GetDspCmd();
+    FCSdata.GearCmd = _FCS->GetGearCmd();
+    FCSdata.PitchTrimCmd = _FCS->GetPitchTrimCmd();
+    FCSdata.RollTrimCmd = _FCS->GetRollTrimCmd();
+    FCSdata.YawTrimCmd = _FCS->GetYawTrimCmd();
+
+
+    //////////// Propulsion & Tanks & Engines + EngineFCS
+
+    ot::aircraft_data::Propulsion Propdata;
+
+    Propdata.GetActiveEngine = _propulsion->GetActiveEngine();
+    Propdata.FuelFreezeStatus = _propulsion->GetFuelFreeze();
+    //num of fuel tanks currently actively supplying fuel
+    Propdata.ActiveFuelTanks = _propulsion->GetnumSelectedFuelTanks();
+    //num of fuel tanks currently actively supplying oxidizer
+    Propdata.ActiveOxiTanks = _propulsion->GetnumSelectedOxiTanks();
+    Propdata.NumTanks = _propulsion->GetNumTanks();
+    Propdata.NumEngines = _propulsion->GetNumEngines();
+    Propdata.TanksWeight = _propulsion->GetTanksWeight();
+    Propdata.PropForces = { _propulsion->GetForces().Entry(1), _propulsion->GetForces().Entry(2), _propulsion->GetForces().Entry(3) };
+    Propdata.PropMoments = { _propulsion->GetMoments().Entry(1), _propulsion->GetMoments().Entry(2), _propulsion->GetMoments().Entry(3) };
+    Propdata.TanksMoment = { _propulsion->GetTanksMoment().Entry(1), _propulsion->GetTanksMoment().Entry(2), _propulsion->GetTanksMoment().Entry(3) };
+
+    //Tanks
+    _aircraft_data.Tanks.realloc(Propdata.NumTanks);
+
+    for (int i = 0; i < Propdata.NumTanks; i++)
+    {
+        ot::aircraft_data::Tank& Tankdata = _aircraft_data.Tanks[i];
+        JSBSim::FGTank* _tank = _propulsion->GetTank(i);
+
+        Tankdata.TankCapacityLbs = _tank->GetCapacity();
+        Tankdata.TankCapacityGal = _tank->GetCapacityGallons();
+        Tankdata.TankContentsLbs = _tank->GetContents();
+        Tankdata.TankContentsGal = _tank->GetContentsGallons();
+        Tankdata.TankDensity = _tank->GetDensity();
+        Tankdata.TankExternalFlow = _tank->GetExternalFlow();
+        //fill level in percents 0-100
+        Tankdata.TankFillLvlPct = _tank->GetPctFull();
+        Tankdata.TankPriority = _tank->GetPriority();
+        Tankdata.TankSupplyStatus = _tank->GetSelected();
+        Tankdata.TankStandpipe = _tank->GetStandpipe();
+        Tankdata.TankTempDegF = _tank->GetTemperature();
+        Tankdata.TankTempDegC = _tank->GetTemperature_degC();
+        //0-undefined, 1-fuel, 2-oxidizer
+        Tankdata.TankType = _tank->GetType();
+        Tankdata.TankXYZ = { _tank->GetXYZ().Entry(1), _tank->GetXYZ().Entry(2), _tank->GetXYZ().Entry(3) };
+    }
+
+    //Engines + EngineFCS
+    _aircraft_data.Engines.realloc(Propdata.NumEngines);
+    _aircraft_data.EnginesFCS.realloc(Propdata.NumEngines);
+
+    for (int i = 0; i < Propdata.NumEngines; i++)
+    {
+        ot::aircraft_data::Engine& Enginedata = _aircraft_data.Engines[i];
+        JSBSim::FGEngine* _engine = _propulsion->GetEngine(i);
+        //total fuel requirements for this engine in pounds
+        Enginedata.EngFuelNeeded = _engine->CalcFuelNeed();
+        Enginedata.EngOxiNeeded = _engine->CalcOxidizerNeed();
+        Enginedata.EngCrankingStatus = _engine->GetCranking();
+        Enginedata.EngFuelFlowRate = _engine->GetFuelFlowRate();
+        Enginedata.EngFuelUsedLbs = _engine->GetFuelUsedLbs();
+        Enginedata.EngNumSourceTanks = _engine->GetNumSourceTanks();
+        Enginedata.EngPowerAvailable = _engine->GetPowerAvailable();
+        Enginedata.EngSourceTank = _engine->GetSourceTank(0);
+        Enginedata.EngStarvedStatus = _engine->GetStarved();
+        Enginedata.EngType = _engine->GetType();
+        Enginedata.EngStarter = _engine->GetStarter();
+        Enginedata.EngRunning = _engine->GetRunning();
+        Enginedata.EngThrust = _engine->GetThrust();
+        Enginedata.EngineMoments = { _engine->GetMoments().Entry(1), _engine->GetMoments().Entry(2), _engine->GetMoments().Entry(3) };
+        Enginedata.EngineForces = { _engine->GetBodyForces().Entry(1), _engine->GetBodyForces().Entry(2), _engine->GetBodyForces().Entry(3) };
+
+        if (Enginedata.EngName.is_empty())
+        {
+            Enginedata.EngName = _engine->GetName().c_str();
+        }
+
+        JSBSim::FGThruster* _thruster = _engine->GetThruster();
+
+        Enginedata.ThrusterThrust = _thruster->GetThrust();
+        Enginedata.ThrusterEngineRPM = _thruster->GetEngineRPM();
+        Enginedata.ThrusterRPM = _thruster->GetRPM();
+        Enginedata.ThrusterGearRatio = _thruster->GetGearRatio();
+        Enginedata.ThrusterPitch = _thruster->GetPitch();
+        Enginedata.ThrusterPowerRequired = _thruster->GetPowerRequired();
+        Enginedata.ThrusterReverseAngle = _thruster->GetReverserAngle();
+        Enginedata.ThrusterType = _thruster->GetType();
+        Enginedata.ThrusterTransformType = _thruster->GetTransformType();
+        Enginedata.ThrusterYaw = _thruster->GetYaw();
+        Enginedata.ThrusterAnglesToBody = { _thruster->GetAnglesToBody().Entry(1), _thruster->GetAnglesToBody().Entry(2), _thruster->GetAnglesToBody().Entry(3) };
+        Enginedata.ThrusterBodyForces = { _thruster->GetBodyForces().Entry(1), _thruster->GetBodyForces().Entry(2), _thruster->GetBodyForces().Entry(3) };
+        Enginedata.ThrusterLoc = { _thruster->GetLocation().Entry(1), _thruster->GetLocation().Entry(2), _thruster->GetLocation().Entry(3) };
+        Enginedata.ThrusterMoments = { _thruster->GetMoments().Entry(1), _thruster->GetMoments().Entry(2), _thruster->GetMoments().Entry(3) };
+        Enginedata.ThrusterActingLoc = { _thruster->GetActingLocation().Entry(1), _thruster->GetActingLocation().Entry(2), _thruster->GetActingLocation().Entry(3) };
+
+        ot::aircraft_data::EngineFCS& EngineFCSdata = _aircraft_data.EnginesFCS[i];
+
+        //EngineFCS
+        //param - engine number
+        EngineFCSdata.Mixture = _FCS->GetMixturePos(i);
+        EngineFCSdata.Throttle = _FCS->GetThrottlePos(i);
+        EngineFCSdata.PropAdvance = _FCS->GetPropAdvance(i);
+        EngineFCSdata.PropFeatherStatus = _FCS->GetPropFeather(i);
+        EngineFCSdata.ThrottleCmd = _FCS->GetThrottleCmd(i);
+        EngineFCSdata.PropAdvanceCmd = _FCS->GetPropAdvanceCmd(i);
+        EngineFCSdata.MixtureCmd = _FCS->GetMixtureCmd(i);
+        EngineFCSdata.FeatherCmd = _FCS->GetFeatherCmd(i);
+    }
+
+
+    //////////// Propagate  
+
+    ot::aircraft_data::Propagate Propagdata;
+
+    Propagdata.AltitudeASL = _propagate->GetAltitudeASL();
+    Propagdata.AltitudeASLm = _propagate->GetAltitudeASLmeters();
+    //retrieves sine of vehicle Euler angle component (Phi - 1, Theta - 2 or Psi - 3)
+    Propagdata.SinEulerPhi = _propagate->GetSinEuler(1);
+    Propagdata.SinEulerTheta = _propagate->GetSinEuler(2);
+    Propagdata.SinEulerPsi = _propagate->GetSinEuler(3);
+    //retrieves cosine of vehicle Euler angle component (Phi - 1, Theta - 2 or Psi - 3)
+    Propagdata.CosEulerPhi = _propagate->GetCosEuler(1);
+    Propagdata.CosEulerTheta = _propagate->GetCosEuler(2);
+    Propagdata.CosEulerPsi = _propagate->GetCosEuler(3);
+    Propagdata.DistanceAGL = _propagate->GetDistanceAGL();
+    Propagdata.DistanceAGLkm = _propagate->GetDistanceAGLKm();
+    Propagdata.EarthPosAngle = _propagate->GetEarthPositionAngle();
+    Propagdata.EarthPosAngleDeg = _propagate->GetEarthPositionAngleDeg();
+    Propagdata.ECEFvel = { _propagate->GetECEFVelocity().Entry(1), _propagate->GetECEFVelocity().Entry(2) , _propagate->GetECEFVelocity().Entry(3) };
+    Propagdata.Euler = { _propagate->GetEuler().Entry(1),_propagate->GetEuler().Entry(2) ,_propagate->GetEuler().Entry(3) };
+    Propagdata.EulerDeg = { _propagate->GetEulerDeg().Entry(1),_propagate->GetEulerDeg().Entry(2) ,_propagate->GetEulerDeg().Entry(3) };
+    Propagdata.GeodAlt = _propagate->GetGeodeticAltitude();
+    Propagdata.GeodAltKm = _propagate->GetGeodeticAltitudeKm();
+    Propagdata.GeodLatDeg = _propagate->GetGeodLatitudeDeg();
+    Propagdata.GeodLatRad = _propagate->GetGeodLatitudeRad();
+    Propagdata.CurrentAltRate = _propagate->Gethdot();
+    Propagdata.InertialPos = { _propagate->GetInertialPosition().Entry(1), _propagate->GetInertialPosition().Entry(2), _propagate->GetInertialPosition().Entry(3) };
+    Propagdata.InertialVel = { _propagate->GetInertialVelocity().Entry(1), _propagate->GetInertialVelocity().Entry(2), _propagate->GetInertialVelocity().Entry(3) };
+    Propagdata.InertialVelMag = _propagate->GetInertialVelocityMagnitude();
+    Propagdata.Latitude = _propagate->GetLatitude();
+    Propagdata.LatitudeDeg = _propagate->GetLatitudeDeg();
+    Propagdata.LocalTerrainRadius = _propagate->GetLocalTerrainRadius();
+    Propagdata.PropagateLoc = { _propagate->GetLocation().Entry(1), _propagate->GetLocation().Entry(2), _propagate->GetLocation().Entry(3) };
+    Propagdata.Longtitude = _propagate->GetLongitude();
+    Propagdata.LongtitudeDeg = _propagate->GetLongitudeDeg();
+    Propagdata.NEDvelMagn = _propagate->GetNEDVelocityMagnitude();
+    Propagdata.PropagatePQR = { _propagate->GetPQR().Entry(1), _propagate->GetPQR().Entry(2), _propagate->GetPQR().Entry(3) };
+    Propagdata.PropagatePQRi = { _propagate->GetPQRi().Entry(1), _propagate->GetPQRi().Entry(2), _propagate->GetPQRi().Entry(3) };
+    Propagdata.PropagateRadius = _propagate->GetRadius();
+    Propagdata.TerrainAngularVel = { _propagate->GetTerrainAngularVelocity().Entry(1),_propagate->GetTerrainAngularVelocity().Entry(2), _propagate->GetTerrainAngularVelocity().Entry(3) };
+    Propagdata.TerrainElevation = _propagate->GetTerrainElevation();
+    Propagdata.TerrainVel = { _propagate->GetTerrainVelocity().Entry(1), _propagate->GetTerrainVelocity().Entry(2), _propagate->GetTerrainVelocity().Entry(3) };
+    Propagdata.PropagateUVW = { _propagate->GetUVW().Entry(1), _propagate->GetUVW().Entry(2), _propagate->GetUVW().Entry(3) };
+    Propagdata.PropagateVel = { _propagate->GetVel().Entry(1), _propagate->GetVel().Entry(2), _propagate->GetVel().Entry(3) };
+
+
+    //////////// atmosphere 
+
+    ot::aircraft_data::Atmosphere Atmosdata;
+
+    Atmosdata.AtmosDensity = _atmosphere->GetDensity();
+    Atmosdata.AbsoluteViscosity = _atmosphere->GetAbsoluteViscosity();
+    Atmosdata.DensityAltitude = _atmosphere->GetDensityAltitude();
+    /// Returns the ratio of at-altitude density over the sea level value.
+    Atmosdata.DensityRatio = _atmosphere->GetDensityRatio();
+    /// Returns the sea level density in slugs/ft^3
+    Atmosdata.DensitySL = _atmosphere->GetDensitySL();
+    Atmosdata.KinematicViscosity = _atmosphere->GetKinematicViscosity();
+    //can take param double altitude - returns pressure at specified altitude in psf
+    //altitude is in ft
+    Atmosdata.AtmosPressure = _atmosphere->GetPressure(Propagdata.AltitudeASL);
+    Atmosdata.PressureAltitude = _atmosphere->GetPressureAltitude();
+    Atmosdata.PressureRatio = _atmosphere->GetPressureRatio();
+    Atmosdata.PressureSL = _atmosphere->GetPressureSL();
+    //can take param double altitude(ft?) - returns speed of sound ft/sec at given altitude in ft
+    Atmosdata.SoundSpeed = _atmosphere->GetSoundSpeed(Propagdata.AltitudeASL);
+    /// Returns the ratio of at-altitude sound speed over the sea level value.
+    Atmosdata.SoundSpeedRatio = _atmosphere->GetSoundSpeedRatio();
+    /// Returns the sea level speed of sound in ft/sec.
+    Atmosdata.SoundSpeedSL = _atmosphere->GetSoundSpeedSL();
+    /// Returns the actual, modeled temperature at the current altitude in degrees Rankine.
+    Atmosdata.TemperatureRa = _atmosphere->GetTemperature(Propagdata.AltitudeASL);
+    /// Returns the ratio at-current-altitude temperature as modeled over the sea level value
+    Atmosdata.TemperatureRatio = _atmosphere->GetTemperatureRatio(Propagdata.AltitudeASL);
+    /// Returns the actual, modeled sea level temperature in degrees Rankine.
+    Atmosdata.TemperatureSLRa = _atmosphere->GetTemperatureSL();
+
+
+    //////////// accelerations 
+
+    ot::aircraft_data::Accelerations Acceldata;
+    JSBSim::FGAccelerations* _accelerations = _jsbexec->GetAccelerations();
+
+    Acceldata.GravAccelMagnitude = _accelerations->GetGravAccelMagnitude();
+
+    //retrieves acceleration resulting from applied forces 
+    Acceldata.BodyAccel = { _accelerations->GetBodyAccel().Entry(1), _accelerations->GetBodyAccel().Entry(2), _accelerations->GetBodyAccel().Entry(3) };
+    //retrieves the total forces applied on the body
+    Acceldata.AccelForces = { _accelerations->GetForces().Entry(1), _accelerations->GetForces().Entry(2), _accelerations->GetForces().Entry(3) };
+    Acceldata.GravAccel = { _accelerations->GetGravAccel().Entry(1), _accelerations->GetGravAccel().Entry(2), _accelerations->GetGravAccel().Entry(3) };
+    //retrieves ground forces applied on the body
+    Acceldata.GroundForces = { _accelerations->GetGroundForces().Entry(1), _accelerations->GetGroundForces().Entry(2), _accelerations->GetGroundForces().Entry(3) };
+    //retrieves ground moments applied on the body 
+    Acceldata.GroundMoments = { _accelerations->GetGroundMoments().Entry(1), _accelerations->GetGroundMoments().Entry(2), _accelerations->GetGroundMoments().Entry(3) };
+    //retrieves a component of the total moments applied on the body 
+    Acceldata.AccelMoments = { _accelerations->GetMoments().Entry(1), _accelerations->GetMoments().Entry(2), _accelerations->GetMoments().Entry(3) };
+    //retrieves the body axis angular acceleration vector
+    Acceldata.AccelPQRdot = { _accelerations->GetPQRdot().Entry(1),_accelerations->GetPQRdot().Entry(2), _accelerations->GetPQRdot().Entry(3) };
+    //retrieves the body axis angular acceleration vector in ECI frame
+    Acceldata.AccelPQRidot = { _accelerations->GetPQRidot().Entry(1), _accelerations->GetPQRidot().Entry(2),_accelerations->GetPQRidot().Entry(3) };
+    //retrieves the body axis acceleration 
+    Acceldata.AccelUVWdot = { _accelerations->GetUVWdot().Entry(1),_accelerations->GetUVWdot().Entry(2), _accelerations->GetUVWdot().Entry(3) };
+    //retrieves the body axis acceleration in the ECI frame
+    Acceldata.AccelUVWidot = { _accelerations->GetUVWidot().Entry(1), _accelerations->GetUVWidot().Entry(2), _accelerations->GetUVWidot().Entry(3) };
+    //retrieves the weight applied on the body
+    Acceldata.Weight = { _accelerations->GetWeight().Entry(1), _accelerations->GetWeight().Entry(2), _accelerations->GetWeight().Entry(3) };
+
+
+    //////////// MassBalance 
+
+    ot::aircraft_data::MassBalance Massbaldata;
+
+    Massbaldata.EmptyWeight = _massBalance->GetEmptyWeight();
+    Massbaldata.Mass = _massBalance->GetMass();
+    Massbaldata.PointMassWeight = _massBalance->GetTotalPointMassWeight();
+    Massbaldata.Weight = _massBalance->GetWeight();
+    //can take parameter int axis
+    Massbaldata.DeltaXYZcg = { _massBalance->GetDeltaXYZcg().Entry(1), _massBalance->GetDeltaXYZcg().Entry(2), _massBalance->GetDeltaXYZcg().Entry(3) };
+    //can take parameter int axis
+    Massbaldata.XYZcg = { _massBalance->GetXYZcg().Entry(1), _massBalance->GetXYZcg().Entry(2), _massBalance->GetXYZcg().Entry(3) };
+    Massbaldata.PointMassMoment = { _massBalance->GetPointMassMoment().Entry(1), _massBalance->GetPointMassMoment().Entry(2), _massBalance->GetPointMassMoment().Entry(3) };
+
+
+    //////////// Aerodynamics 
+
+    ot::aircraft_data::Aerodynamics Aerodyndata;
+
+    Aerodyndata.AlphaCLmax = _aerodynamics->GetAlphaCLMax();
+    Aerodyndata.AlphaCLmin = _aerodynamics->GetAlphaCLMin();
+    Aerodyndata.AlphaW = _aerodynamics->GetAlphaW();
+    Aerodyndata.BI2vel = _aerodynamics->GetBI2Vel();
+    Aerodyndata.CI2vel = _aerodynamics->GetCI2Vel();
+    //gets square of the lift coeficient 
+    Aerodyndata.LiftCoefSq = _aerodynamics->GetClSquared();
+    //gets aerodynamic vector 
+    Aerodyndata.AerodynForces = { _aerodynamics->GetForces().Entry(1),_aerodynamics->GetForces().Entry(2) ,_aerodynamics->GetForces().Entry(3) };
+    Aerodyndata.HysteresisParm = _aerodynamics->GetHysteresisParm();
+    //gets lift over drag ratio
+    Aerodyndata.LoD = _aerodynamics->GetLoD();
+    //gets aerodynamic moment vector about the CG - total or for given axis
+    Aerodyndata.AerodynMoments = { _aerodynamics->GetMoments().Entry(1),_aerodynamics->GetMoments().Entry(2) ,_aerodynamics->GetMoments().Entry(3) };
+    //gets aerodynamic moment vector about the moment reference center - total or for given axis
+    Aerodyndata.AerodynMomentsMRC = { _aerodynamics->GetMomentsMRC().Entry(1),_aerodynamics->GetMomentsMRC().Entry(2) ,_aerodynamics->GetMomentsMRC().Entry(3) };
+    Aerodyndata.StallWarn = _aerodynamics->GetStallWarn();
+    //gets aerodynamic forces in the wind axes
+    Aerodyndata.ForcesWindAxes = { _aerodynamics->GetvFw().Entry(1),_aerodynamics->GetvFw().Entry(2) ,_aerodynamics->GetvFw().Entry(3) };
+
+
+    //////////// Inertial
+
+    ot::aircraft_data::Inertial Inertialdata;
+
+    JSBSim::FGColumnVector3 GravJ2 = _inertial->GetGravityJ2(_propagate->GetLocation());
+    Inertialdata.GravityJ2 = { GravJ2.Entry(1),GravJ2.Entry(2) ,GravJ2.Entry(3) };
+    Inertialdata.OmegaPlanet = { _inertial->GetOmegaPlanet().Entry(1),_inertial->GetOmegaPlanet().Entry(2) ,_inertial->GetOmegaPlanet().Entry(3) };
+    Inertialdata.RefRadius = _inertial->GetRefRadius();
+    Inertialdata.Semimajor = _inertial->GetSemimajor();
+    Inertialdata.Semiminor = _inertial->GetSemiminor();
+    Inertialdata.Omega = _inertial->omega();
+    Inertialdata.SLgravity = _inertial->SLgravity();
+
+
+    //////////// Aircraft 
+
+
+    ot::aircraft_data::Aircraft Aircraftdata;
+
+    Aircraftdata.Cbar = _aircraft->Getcbar();
+    Aircraftdata.HtailArea = _aircraft->GetHTailArea();
+    Aircraftdata.HtailArm = _aircraft->GetHTailArm();
+    Aircraftdata.LbarH = _aircraft->Getlbarh();
+    Aircraftdata.Lbarv = _aircraft->Getlbarv();
+    Aircraftdata.PitotAngle = _aircraft->GetPitotAngle();
+    Aircraftdata.VbarH = _aircraft->Getvbarh();
+    Aircraftdata.VbarV = _aircraft->Getvbarv();
+    Aircraftdata.VtailArea = _aircraft->GetVTailArea();
+    Aircraftdata.VtailArm = _aircraft->GetVTailArm();
+    Aircraftdata.WingArea = _aircraft->GetWingArea();
+    Aircraftdata.WingIncidence = _aircraft->GetWingIncidence();
+    Aircraftdata.WingIncidenceDeg = _aircraft->GetWingIncidenceDeg();
+    Aircraftdata.WingSpan = _aircraft->GetWingSpan();
+    Aircraftdata.AircraftForces = { _aircraft->GetForces().Entry(1),_aircraft->GetForces().Entry(2) ,_aircraft->GetForces().Entry(3) };
+    Aircraftdata.AircraftMoments = { _aircraft->GetMoments().Entry(1),_aircraft->GetMoments().Entry(2) ,_aircraft->GetMoments().Entry(3) };
+    Aircraftdata.AircraftXYZep = { _aircraft->GetXYZep().Entry(1),_aircraft->GetXYZep().Entry(2) ,_aircraft->GetXYZep().Entry(3) };
+    Aircraftdata.AircraftXYZrp = { _aircraft->GetXYZrp().Entry(1),_aircraft->GetXYZrp().Entry(2) ,_aircraft->GetXYZrp().Entry(3) };
+    Aircraftdata.AircraftXYRvrp = { _aircraft->GetXYZvrp().Entry(1),_aircraft->GetXYZvrp().Entry(2) ,_aircraft->GetXYZvrp().Entry(3) };
+
+    if (Aircraftdata.AircraftName.is_empty())
+    {
+        Aircraftdata.AircraftName = _aircraft->GetAircraftName().c_str();
+    }
+
+
+    //////////// Auxiliary 
+
+    ot::aircraft_data::Auxiliary Auxiliarydata;
+
+    Auxiliarydata.DayOfYear = _auxiliary->GetDayOfYear();
+    Auxiliarydata.AuxAdot = _auxiliary->Getadot();
+    Auxiliarydata.AuxAlpha = _auxiliary->Getalpha();
+    Auxiliarydata.AuxBdot = _auxiliary->Getbdot();
+    Auxiliarydata.AuxBeta = _auxiliary->Getbeta();
+    Auxiliarydata.CrossWind = _auxiliary->GetCrossWind();
+    Auxiliarydata.DistanceRelativePos = _auxiliary->GetDistanceRelativePosition();
+    Auxiliarydata.AuxGamma = _auxiliary->GetGamma();
+    Auxiliarydata.GroundTrack = _auxiliary->GetGroundTrack();
+    Auxiliarydata.HeadWind = _auxiliary->GetHeadWind();
+    Auxiliarydata.HOverBCG = _auxiliary->GetHOverBCG();
+    Auxiliarydata.HOverBMAC = _auxiliary->GetHOverBMAC();
+    Auxiliarydata.hVRP = _auxiliary->GethVRP();
+    Auxiliarydata.LatitudeRelatPos = _auxiliary->GetLatitudeRelativePosition();
+    Auxiliarydata.LongtitudeRelatPos = _auxiliary->GetLongitudeRelativePosition();
+    Auxiliarydata.Mach = _auxiliary->GetMach();
+    Auxiliarydata.MachU = _auxiliary->GetMachU();
+    Auxiliarydata.MagBeta = _auxiliary->GetMagBeta();
+    Auxiliarydata.Nlf = _auxiliary->GetNlf();
+    Auxiliarydata.Ny = _auxiliary->GetNy();
+    Auxiliarydata.Nz = _auxiliary->GetNz();
+    Auxiliarydata.Qbar = _auxiliary->Getqbar();
+    Auxiliarydata.QbarUV = _auxiliary->GetqbarUV();
+    Auxiliarydata.QbarUW = _auxiliary->GetqbarUW();
+    Auxiliarydata.ReynoldsNum = _auxiliary->GetReynoldsNumber();
+    Auxiliarydata.SecondsInDay = _auxiliary->GetSecondsInDay();
+    Auxiliarydata.TAT_C = _auxiliary->GetTAT_C();
+    Auxiliarydata.TotalPressure = _auxiliary->GetTotalPressure();
+    Auxiliarydata.TotalTemp = _auxiliary->GetTotalTemperature();
+    Auxiliarydata.VcalibratedFPS = _auxiliary->GetVcalibratedFPS();
+    Auxiliarydata.VcalibratedKTS = _auxiliary->GetVcalibratedKTS();
+    Auxiliarydata.VequivalentFPS = _auxiliary->GetVequivalentFPS();
+    Auxiliarydata.VequivalentKTS = _auxiliary->GetVequivalentKTS();
+    Auxiliarydata.Vground = _auxiliary->GetVground();
+    Auxiliarydata.Vt = _auxiliary->GetVt();
+    Auxiliarydata.VtrueFPS = _auxiliary->GetVtrueFPS();
+    Auxiliarydata.VtrueKTS = _auxiliary->GetVtrueKTS();
+    Auxiliarydata.AeroPQR = { _auxiliary->GetAeroPQR().Entry(1),_auxiliary->GetAeroPQR().Entry(2) ,_auxiliary->GetAeroPQR().Entry(3) };
+    Auxiliarydata.EulerRates = { _auxiliary->GetEulerRates().Entry(1),_auxiliary->GetEulerRates().Entry(2) ,_auxiliary->GetEulerRates().Entry(3) };
+    Auxiliarydata.LocVRP = { _auxiliary->GetLocationVRP().Entry(1),_auxiliary->GetLocationVRP().Entry(2) ,_auxiliary->GetLocationVRP().Entry(3) };
+    Auxiliarydata.Ncg = { _auxiliary->GetNcg().Entry(1), _auxiliary->GetNcg().Entry(2), _auxiliary->GetNcg().Entry(3) };
+    Auxiliarydata.Npilot = { _auxiliary->GetNpilot().Entry(1),_auxiliary->GetNpilot().Entry(2) ,_auxiliary->GetNpilot().Entry(3) };
+    Auxiliarydata.Nwcg = { _auxiliary->GetNwcg().Entry(1),_auxiliary->GetNwcg().Entry(2) ,_auxiliary->GetNwcg().Entry(3) };
+    Auxiliarydata.PilotAccel = { _auxiliary->GetPilotAccel().Entry(1),_auxiliary->GetPilotAccel().Entry(2) ,_auxiliary->GetPilotAccel().Entry(3) };
+
 }
 
 
@@ -731,19 +1151,21 @@ void jsbsim_wrapper_impl::set_gear(const bool down)
 //if bool parameter is true, return only gear/bogey contact points
 uint jsbsim_wrapper_impl::get_num_contact_points(bool gearsonly)
 {
+    int contact_point_count = _groundReactions->GetNumGearUnits();
+
     if (gearsonly)
     {
         int gearcount = 0;
 
-        for(int i = 0; i < _jsbexec->GetGroundReactions()->GetNumGearUnits(); i++)
+        for (int i = 0; i < contact_point_count; i++)
         {
-            gearcount += _jsbexec->GetGroundReactions()->GetGearUnit(i)->IsBogey();
+            gearcount += _groundReactions->GetGearUnit(i)->IsBogey();
         }
         return gearcount;
     }
     else
     {
-        return _jsbexec->GetGroundReactions()->GetNumGearUnits();
+        return contact_point_count;
     }
 }
 
@@ -751,13 +1173,13 @@ uint jsbsim_wrapper_impl::get_num_contact_points(bool gearsonly)
 
 double3 jsbsim_wrapper_impl::get_contact_point_pos(const uint idx)
 {
-    const uint n = _jsbexec->GetGroundReactions()->GetNumGearUnits();
+    const uint n = _groundReactions->GetNumGearUnits();
 
     if (idx < n) {
-        FGLGear* const gear = _jsbexec->GetGroundReactions()->GetGearUnit(idx);
+        FGLGear* const gear = _groundReactions->GetGearUnit(idx);
         quat georot = geomob->get_rot();
         double3 pos = geomob->get_pos();
-        float3 gearloc = { gear->GetLocationY(), - gear->GetLocationX(), gear->GetLocationZ()};
+        float3 gearloc = { gear->GetLocationY(), -gear->GetLocationX(), gear->GetLocationZ() };
         //from inch to meters
         gearloc *= 0.0254f;
         //change the original rotation, to the object rotation
@@ -776,32 +1198,66 @@ double3 jsbsim_wrapper_impl::get_contact_point_pos(const uint idx)
 uint jsbsim_wrapper_impl::get_steer_type(uint id)
 {
     int steer_type;
-    const uint n = _jsbexec->GetGroundReactions()->GetNumGearUnits();
+    const uint n = _groundReactions->GetNumGearUnits();
 
     if (id < n)
     {
-        steer_type = _jsbexec->GetGroundReactions()->GetGearUnit(id)->GetSteerType();
+        steer_type = _groundReactions->GetGearUnit(id)->GetSteerType();
         return steer_type;
     }
 
     return uint();
 }
 
-// 1.param = for which wheel you want to get the axis velocity
+
 float3 jsbsim_wrapper_impl::get_wheel_axis_vel(uint wheel_id)
 {
-    const uint n = _jsbexec->GetGroundReactions()->GetNumGearUnits();
+    const uint n = _groundReactions->GetNumGearUnits();
 
     if (wheel_id < n)
     {
+        JSBSim::FGLGear* gear_unit = _groundReactions->GetGearUnit(wheel_id);
         float3 velocities;
-        velocities.x = _jsbexec->GetGroundReactions()->GetGearUnit(wheel_id)->GetWheelVel(1);
-        velocities.y = _jsbexec->GetGroundReactions()->GetGearUnit(wheel_id)->GetWheelVel(2);
-        velocities.z = _jsbexec->GetGroundReactions()->GetGearUnit(wheel_id)->GetWheelVel(3);
+
+        velocities.x = gear_unit->GetWheelVel(1);
+        velocities.y = gear_unit->GetWheelVel(2);
+        velocities.z = gear_unit->GetWheelVel(3);
+
         return velocities;
     }
 
-   return float3();
+    return float3();
+}
+
+void jsbsim_wrapper_impl::show_sketch(double3 pos)
+{
+    uint idgroup = sketch->create_group();
+    sketch->set_xray_mode(true);
+
+    sketch->set_position(pos);
+    sketch->set_rotation(geomob->get_rot());
+
+    uint canvasid = sketch->create_canvas(idgroup, { 0,0,0 });
+    sketch->make_canvas_active(canvasid);
+
+    float3 x_axis = { 1,0,0 };
+    float3 y_axis = { 0,1,0 };
+    float3 z_axis = { 0,0,1 };
+
+    sketch->set_color({ 255,0,0 });
+    float3 offset = { 0, 0, 0 };
+    sketch->draw_line(offset, true);
+    sketch->draw_line(offset + x_axis);
+
+    sketch->set_color({ 0,255,0 });
+    sketch->draw_line(offset, true);
+    sketch->draw_line(offset + y_axis);
+
+    sketch->set_color({ 0,0,255 });
+    sketch->draw_line(offset, true);
+    sketch->draw_line(offset + z_axis);
+
+    sketch->delete_group(idgroup);
 }
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
