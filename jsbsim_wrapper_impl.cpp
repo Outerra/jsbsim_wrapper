@@ -50,7 +50,7 @@ const double STEPs = STEPns * 1e-9;
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
-jsbsim_wrapper_impl::jsbsim_wrapper_impl(ot::eng_interface* eng)
+jsbsim_wrapper_impl::jsbsim_wrapper_impl(ot::eng_interface* eng, uint object_id)
     : _jsbroot(ot::jsbsim_root::_inst == 0
         ? new ot::jsbsim_root(eng)
         : ot::jsbsim_root::_inst)
@@ -76,6 +76,11 @@ jsbsim_wrapper_impl::jsbsim_wrapper_impl(ot::eng_interface* eng)
     DASSERT(_jsbexec.get() != 0);
     //_jsbexec->Setdt(integration_step);
     //_jsbexec->SetGroundCallback(ot::jsbsim_root::get().get_gc()); // set in the jsbsim_root!
+
+    sketch = ot::sketch::get();
+    world = ot::world::get();
+    object = world->get_object(object_id);
+    geomob = object->get_geomob(0);
 
     _jsbexec->Setdt(STEPs);
 }
@@ -447,7 +452,7 @@ void jsbsim_wrapper_impl::update_aircraft_data()
     }
 
 
-    //////////// Propagate  
+    //////////// Propagate
 
     ot::aircraft_data::Propagate Propagdata;
 
@@ -493,7 +498,7 @@ void jsbsim_wrapper_impl::update_aircraft_data()
     Propagdata.PropagateVel = { _propagate->GetVel().Entry(1), _propagate->GetVel().Entry(2), _propagate->GetVel().Entry(3) };
 
 
-    //////////// atmosphere 
+    //////////// atmosphere
 
     ot::aircraft_data::Atmosphere Atmosdata;
 
@@ -525,29 +530,29 @@ void jsbsim_wrapper_impl::update_aircraft_data()
     Atmosdata.TemperatureSLRa = _atmosphere->GetTemperatureSL();
 
 
-    //////////// accelerations 
+    //////////// accelerations
 
     ot::aircraft_data::Accelerations Acceldata;
     JSBSim::FGAccelerations* _accelerations = _jsbexec->GetAccelerations();
 
     Acceldata.GravAccelMagnitude = _accelerations->GetGravAccelMagnitude();
 
-    //retrieves acceleration resulting from applied forces 
+    //retrieves acceleration resulting from applied forces
     Acceldata.BodyAccel = { _accelerations->GetBodyAccel().Entry(1), _accelerations->GetBodyAccel().Entry(2), _accelerations->GetBodyAccel().Entry(3) };
     //retrieves the total forces applied on the body
     Acceldata.AccelForces = { _accelerations->GetForces().Entry(1), _accelerations->GetForces().Entry(2), _accelerations->GetForces().Entry(3) };
     Acceldata.GravAccel = { _accelerations->GetGravAccel().Entry(1), _accelerations->GetGravAccel().Entry(2), _accelerations->GetGravAccel().Entry(3) };
     //retrieves ground forces applied on the body
     Acceldata.GroundForces = { _accelerations->GetGroundForces().Entry(1), _accelerations->GetGroundForces().Entry(2), _accelerations->GetGroundForces().Entry(3) };
-    //retrieves ground moments applied on the body 
+    //retrieves ground moments applied on the body
     Acceldata.GroundMoments = { _accelerations->GetGroundMoments().Entry(1), _accelerations->GetGroundMoments().Entry(2), _accelerations->GetGroundMoments().Entry(3) };
-    //retrieves a component of the total moments applied on the body 
+    //retrieves a component of the total moments applied on the body
     Acceldata.AccelMoments = { _accelerations->GetMoments().Entry(1), _accelerations->GetMoments().Entry(2), _accelerations->GetMoments().Entry(3) };
     //retrieves the body axis angular acceleration vector
     Acceldata.AccelPQRdot = { _accelerations->GetPQRdot().Entry(1),_accelerations->GetPQRdot().Entry(2), _accelerations->GetPQRdot().Entry(3) };
     //retrieves the body axis angular acceleration vector in ECI frame
     Acceldata.AccelPQRidot = { _accelerations->GetPQRidot().Entry(1), _accelerations->GetPQRidot().Entry(2),_accelerations->GetPQRidot().Entry(3) };
-    //retrieves the body axis acceleration 
+    //retrieves the body axis acceleration
     Acceldata.AccelUVWdot = { _accelerations->GetUVWdot().Entry(1),_accelerations->GetUVWdot().Entry(2), _accelerations->GetUVWdot().Entry(3) };
     //retrieves the body axis acceleration in the ECI frame
     Acceldata.AccelUVWidot = { _accelerations->GetUVWidot().Entry(1), _accelerations->GetUVWidot().Entry(2), _accelerations->GetUVWidot().Entry(3) };
@@ -555,7 +560,7 @@ void jsbsim_wrapper_impl::update_aircraft_data()
     Acceldata.Weight = { _accelerations->GetWeight().Entry(1), _accelerations->GetWeight().Entry(2), _accelerations->GetWeight().Entry(3) };
 
 
-    //////////// MassBalance 
+    //////////// MassBalance
 
     ot::aircraft_data::MassBalance Massbaldata;
 
@@ -570,7 +575,7 @@ void jsbsim_wrapper_impl::update_aircraft_data()
     Massbaldata.PointMassMoment = { _massBalance->GetPointMassMoment().Entry(1), _massBalance->GetPointMassMoment().Entry(2), _massBalance->GetPointMassMoment().Entry(3) };
 
 
-    //////////// Aerodynamics 
+    //////////// Aerodynamics
 
     ot::aircraft_data::Aerodynamics Aerodyndata;
 
@@ -579,9 +584,9 @@ void jsbsim_wrapper_impl::update_aircraft_data()
     Aerodyndata.AlphaW = _aerodynamics->GetAlphaW();
     Aerodyndata.BI2vel = _aerodynamics->GetBI2Vel();
     Aerodyndata.CI2vel = _aerodynamics->GetCI2Vel();
-    //gets square of the lift coeficient 
+    //gets square of the lift coeficient
     Aerodyndata.LiftCoefSq = _aerodynamics->GetClSquared();
-    //gets aerodynamic vector 
+    //gets aerodynamic vector
     Aerodyndata.AerodynForces = { _aerodynamics->GetForces().Entry(1),_aerodynamics->GetForces().Entry(2) ,_aerodynamics->GetForces().Entry(3) };
     Aerodyndata.HysteresisParm = _aerodynamics->GetHysteresisParm();
     //gets lift over drag ratio
@@ -609,7 +614,7 @@ void jsbsim_wrapper_impl::update_aircraft_data()
     Inertialdata.SLgravity = _inertial->SLgravity();
 
 
-    //////////// Aircraft 
+    //////////// Aircraft
 
 
     ot::aircraft_data::Aircraft Aircraftdata;
@@ -640,7 +645,7 @@ void jsbsim_wrapper_impl::update_aircraft_data()
     }
 
 
-    //////////// Auxiliary 
+    //////////// Auxiliary
 
     ot::aircraft_data::Auxiliary Auxiliarydata;
 
@@ -1194,7 +1199,7 @@ double3 jsbsim_wrapper_impl::get_contact_point_pos(const uint idx)
 }
 
 //uint id = wheel id
-//returned steer types: 0 - steerable  ; 1 - fix, 2- caster 
+//returned steer types: 0 - steerable  ; 1 - fix, 2- caster
 uint jsbsim_wrapper_impl::get_steer_type(uint id)
 {
     int steer_type;

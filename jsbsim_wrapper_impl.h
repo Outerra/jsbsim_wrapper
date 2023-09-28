@@ -75,11 +75,11 @@ namespace JSBSim {
         double3 _prev_pqr;
 
 
-        ///////////////// 
-        iref<ot::sketch> sketch = ot::sketch::get();
-        iref<ot::world> world = ot::world::get();
-        iref<ot::object> object = world->get_object(0);
-        iref<ot::geomob> geomob = object->get_geomob(0);
+        ///////////////// TMP DEBUG
+        iref<ot::sketch> sketch;
+        iref<ot::world> world;
+        iref<ot::object> object;
+        iref<ot::geomob> geomob;
 
     protected:
 
@@ -88,7 +88,7 @@ namespace JSBSim {
 
     public:
 
-        jsbsim_wrapper_impl(ot::eng_interface* eng);
+        jsbsim_wrapper_impl(ot::eng_interface* eng, uint object_id);
         virtual ~jsbsim_wrapper_impl();
 
         void update_aircraft_data();
