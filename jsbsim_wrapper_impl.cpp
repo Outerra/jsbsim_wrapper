@@ -77,10 +77,17 @@ jsbsim_wrapper_impl::jsbsim_wrapper_impl(ot::eng_interface* eng, uint object_id)
     //_jsbexec->Setdt(integration_step);
     //_jsbexec->SetGroundCallback(ot::jsbsim_root::get().get_gc()); // set in the jsbsim_root!
 
-    sketch = ot::sketch::get();
-    world = ot::world::get();
-    object = world->get_object(object_id);
-    geomob = object->get_geomob(0);
+    _sketch = ot::sketch::get();
+    _world = ot::world::get();
+
+    if (_world)
+    {
+        _object =_world->get_object(object_id);
+    }
+    if (_object)
+    {
+        _geomob = _object->get_geomob(0);
+    }
 
     _jsbexec->Setdt(STEPs);
 }
@@ -1178,23 +1185,25 @@ uint jsbsim_wrapper_impl::get_num_contact_points(bool gearsonly)
 
 double3 jsbsim_wrapper_impl::get_contact_point_pos(const uint idx)
 {
-    const uint n = _groundReactions->GetNumGearUnits();
+    if (_geomob)
+    {
+        const uint n = _groundReactions->GetNumGearUnits();
 
-    if (idx < n) {
-        FGLGear* const gear = _groundReactions->GetGearUnit(idx);
-        quat georot = geomob->get_rot();
-        double3 pos = geomob->get_pos();
-        float3 gearloc = { gear->GetLocationY(), -gear->GetLocationX(), gear->GetLocationZ() };
-        //from inch to meters
-        gearloc *= 0.0254f;
-        //change the original rotation, to the object rotation
-        glm::vec3 newgearloc = glm::rotate(georot, glm::vec3(gearloc));
-        //gear location is local, therefore add game object location
-        pos += {newgearloc.x, newgearloc.y, newgearloc.z};
+        if (idx < n) {
+            FGLGear* const gear = _groundReactions->GetGearUnit(idx);
+            quat georot = _geomob->get_rot();
+            double3 pos = _geomob->get_pos();
+            float3 gearloc = { gear->GetLocationY(), -gear->GetLocationX(), gear->GetLocationZ() };
+            //from inch to meters
+            gearloc *= 0.0254f;
+            //change the original rotation, to the object rotation
+            glm::vec3 newgearloc = glm::rotate(georot, glm::vec3(gearloc));
+            //gear location is local, therefore add game object location
+            pos += {newgearloc.x, newgearloc.y, newgearloc.z};
 
-        return pos;
+            return pos;
+        }
     }
-
     return double3();
 }
 
@@ -1236,33 +1245,36 @@ float3 jsbsim_wrapper_impl::get_wheel_axis_vel(uint wheel_id)
 
 void jsbsim_wrapper_impl::show_sketch(double3 pos)
 {
-    uint idgroup = sketch->create_group();
-    sketch->set_xray_mode(true);
+    if (_sketch && _geomob)
+    {
+        uint idgroup = _sketch->create_group();
+        _sketch->set_xray_mode(true);
 
-    sketch->set_position(pos);
-    sketch->set_rotation(geomob->get_rot());
+        _sketch->set_position(pos);
+        _sketch->set_rotation(_geomob->get_rot());
 
-    uint canvasid = sketch->create_canvas(idgroup, { 0,0,0 });
-    sketch->make_canvas_active(canvasid);
+        uint canvasid = _sketch->create_canvas(idgroup, { 0,0,0 });
+        _sketch->make_canvas_active(canvasid);
 
-    float3 x_axis = { 1,0,0 };
-    float3 y_axis = { 0,1,0 };
-    float3 z_axis = { 0,0,1 };
+        float3 x_axis = { 1,0,0 };
+        float3 y_axis = { 0,1,0 };
+        float3 z_axis = { 0,0,1 };
 
-    sketch->set_color({ 255,0,0 });
-    float3 offset = { 0, 0, 0 };
-    sketch->draw_line(offset, true);
-    sketch->draw_line(offset + x_axis);
+        _sketch->set_color({ 255,0,0 });
+        float3 offset = { 0, 0, 0 };
+        _sketch->draw_line(offset, true);
+        _sketch->draw_line(offset + x_axis);
 
-    sketch->set_color({ 0,255,0 });
-    sketch->draw_line(offset, true);
-    sketch->draw_line(offset + y_axis);
+        _sketch->set_color({ 0,255,0 });
+        _sketch->draw_line(offset, true);
+        _sketch->draw_line(offset + y_axis);
 
-    sketch->set_color({ 0,0,255 });
-    sketch->draw_line(offset, true);
-    sketch->draw_line(offset + z_axis);
+        _sketch->set_color({ 0,0,255 });
+        _sketch->draw_line(offset, true);
+        _sketch->draw_line(offset + z_axis);
 
-    sketch->delete_group(idgroup);
+        _sketch->delete_group(idgroup);
+    }
 }
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=

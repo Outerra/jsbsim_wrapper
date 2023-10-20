@@ -76,10 +76,10 @@ namespace JSBSim {
 
 
         ///////////////// TMP DEBUG
-        iref<ot::sketch> sketch;
-        iref<ot::world> world;
-        iref<ot::object> object;
-        iref<ot::geomob> geomob;
+        iref<ot::sketch> _sketch = nullptr;
+        iref<ot::world> _world = nullptr;
+        iref<ot::object> _object = nullptr;
+        iref<ot::geomob> _geomob = nullptr;
 
     protected:
 
