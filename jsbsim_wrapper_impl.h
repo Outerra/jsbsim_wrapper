@@ -137,7 +137,7 @@ namespace JSBSim {
 
         void set_engine(const bool on_off) override;
 
-        void set_gear_brakes(const glm::vec3& brakes) override;
+        void set_gear_brakes(const float3& brakes) override;
 
         void set_flaps(const float angle) override;
 

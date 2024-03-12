@@ -958,7 +958,7 @@ void jsbsim_wrapper_impl::set_engine(const bool on_off)
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
-void jsbsim_wrapper_impl::set_gear_brakes(const glm::vec3& brakes)
+void jsbsim_wrapper_impl::set_gear_brakes(const float3& brakes)
 {
     _FCS->SetLBrake(brakes.x);
     _FCS->SetCBrake(brakes.y);
@@ -1197,9 +1197,9 @@ double3 jsbsim_wrapper_impl::get_contact_point_pos(const uint idx)
             //from inch to meters
             gearloc *= 0.0254f;
             //change the original rotation, to the object rotation
-            glm::vec3 newgearloc = glm::rotate(georot, glm::vec3(gearloc));
+            float3 newgearloc = glm::rotate(georot, float3(gearloc));
             //gear location is local, therefore add game object location
-            pos += {newgearloc.x, newgearloc.y, newgearloc.z};
+            pos += double3(newgearloc.x, newgearloc.y, newgearloc.z);
 
             return pos;
         }
