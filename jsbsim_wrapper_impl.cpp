@@ -255,7 +255,7 @@ void jsbsim_wrapper_impl::update_aircraft_data()
     else
         _aircraft_data.altitude_agl = -1.0f;
 
-/*
+
     //////////// Ground reactions & Gears
 
     ot::aircraft_data::GndReactions GndReactdata;
@@ -355,9 +355,9 @@ void jsbsim_wrapper_impl::update_aircraft_data()
     Propdata.GetActiveEngine = _propulsion->GetActiveEngine();
     Propdata.FuelFreezeStatus = _propulsion->GetFuelFreeze();
     //num of fuel tanks currently actively supplying fuel
-    Propdata.ActiveFuelTanks = _propulsion->GetnumSelectedFuelTanks();
+    //Propdata.ActiveFuelTanks = _propulsion->GetnumSelectedFuelTanks();
     //num of fuel tanks currently actively supplying oxidizer
-    Propdata.ActiveOxiTanks = _propulsion->GetnumSelectedOxiTanks();
+    //Propdata.ActiveOxiTanks = _propulsion->GetnumSelectedOxiTanks();
     Propdata.NumTanks = _propulsion->GetNumTanks();
     Propdata.NumEngines = _propulsion->GetNumEngines();
     Propdata.TanksWeight = _propulsion->GetTanksWeight();
@@ -371,7 +371,7 @@ void jsbsim_wrapper_impl::update_aircraft_data()
     for (int i = 0; i < Propdata.NumTanks; i++)
     {
         ot::aircraft_data::Tank& Tankdata = _aircraft_data.Tanks[i];
-        JSBSim::FGTank* _tank = _propulsion->GetTank(i);
+        JSBSim::FGTank* _tank = _propulsion->GetTank(i).get();
 
         Tankdata.TankCapacityLbs = _tank->GetCapacity();
         Tankdata.TankCapacityGal = _tank->GetCapacityGallons();
@@ -398,7 +398,7 @@ void jsbsim_wrapper_impl::update_aircraft_data()
     for (int i = 0; i < Propdata.NumEngines; i++)
     {
         ot::aircraft_data::Engine& Enginedata = _aircraft_data.Engines[i];
-        JSBSim::FGEngine* _engine = _propulsion->GetEngine(i);
+        JSBSim::FGEngine* _engine = _propulsion->GetEngine(i).get();
         //total fuel requirements for this engine in pounds
         Enginedata.EngFuelNeeded = _engine->CalcFuelNeed();
         Enginedata.EngOxiNeeded = _engine->CalcOxidizerNeed();
@@ -535,7 +535,7 @@ void jsbsim_wrapper_impl::update_aircraft_data()
     //////////// accelerations
 
     ot::aircraft_data::Accelerations Acceldata;
-    JSBSim::FGAccelerations* _accelerations = _jsbexec->GetAccelerations();
+    JSBSim::FGAccelerations* _accelerations = _jsbexec->GetAccelerations().get();
 
     Acceldata.GravAccelMagnitude = _accelerations->GetGravAccelMagnitude();
 
@@ -543,7 +543,7 @@ void jsbsim_wrapper_impl::update_aircraft_data()
     Acceldata.BodyAccel = { _accelerations->GetBodyAccel().Entry(1), _accelerations->GetBodyAccel().Entry(2), _accelerations->GetBodyAccel().Entry(3) };
     //retrieves the total forces applied on the body
     Acceldata.AccelForces = { _accelerations->GetForces().Entry(1), _accelerations->GetForces().Entry(2), _accelerations->GetForces().Entry(3) };
-    Acceldata.GravAccel = { _accelerations->GetGravAccel().Entry(1), _accelerations->GetGravAccel().Entry(2), _accelerations->GetGravAccel().Entry(3) };
+    //Acceldata.GravAccel = { _accelerations->GetGravAccel().Entry(1), _accelerations->GetGravAccel().Entry(2), _accelerations->GetGravAccel().Entry(3) };
     //retrieves ground forces applied on the body
     Acceldata.GroundForces = { _accelerations->GetGroundForces().Entry(1), _accelerations->GetGroundForces().Entry(2), _accelerations->GetGroundForces().Entry(3) };
     //retrieves ground moments applied on the body
@@ -601,7 +601,7 @@ void jsbsim_wrapper_impl::update_aircraft_data()
     //gets aerodynamic forces in the wind axes
     Aerodyndata.ForcesWindAxes = { _aerodynamics->GetvFw().Entry(1),_aerodynamics->GetvFw().Entry(2) ,_aerodynamics->GetvFw().Entry(3) };
 
-
+/*
     //////////// Inertial
 
     ot::aircraft_data::Inertial Inertialdata;
@@ -614,7 +614,7 @@ void jsbsim_wrapper_impl::update_aircraft_data()
     Inertialdata.Semiminor = _inertial->GetSemiminor();
     Inertialdata.Omega = _inertial->omega();
     Inertialdata.SLgravity = _inertial->SLgravity();
-
+*/
 
     //////////// Aircraft
 
@@ -626,7 +626,7 @@ void jsbsim_wrapper_impl::update_aircraft_data()
     Aircraftdata.HtailArm = _aircraft->GetHTailArm();
     Aircraftdata.LbarH = _aircraft->Getlbarh();
     Aircraftdata.Lbarv = _aircraft->Getlbarv();
-    Aircraftdata.PitotAngle = _aircraft->GetPitotAngle();
+    //Aircraftdata.PitotAngle = _aircraft->GetPitotAngle();
     Aircraftdata.VbarH = _aircraft->Getvbarh();
     Aircraftdata.VbarV = _aircraft->Getvbarv();
     Aircraftdata.VtailArea = _aircraft->GetVTailArea();
@@ -651,19 +651,19 @@ void jsbsim_wrapper_impl::update_aircraft_data()
 
     ot::aircraft_data::Auxiliary Auxiliarydata;
 
-    Auxiliarydata.DayOfYear = _auxiliary->GetDayOfYear();
+    //Auxiliarydata.DayOfYear = _auxiliary->GetDayOfYear();
     Auxiliarydata.AuxAdot = _auxiliary->Getadot();
     Auxiliarydata.AuxAlpha = _auxiliary->Getalpha();
     Auxiliarydata.AuxBdot = _auxiliary->Getbdot();
     Auxiliarydata.AuxBeta = _auxiliary->Getbeta();
-    Auxiliarydata.CrossWind = _auxiliary->GetCrossWind();
+    //Auxiliarydata.CrossWind = _auxiliary->GetCrossWind();
     Auxiliarydata.DistanceRelativePos = _auxiliary->GetDistanceRelativePosition();
     Auxiliarydata.AuxGamma = _auxiliary->GetGamma();
     Auxiliarydata.GroundTrack = _auxiliary->GetGroundTrack();
-    Auxiliarydata.HeadWind = _auxiliary->GetHeadWind();
+    //Auxiliarydata.HeadWind = _auxiliary->GetHeadWind();
     Auxiliarydata.HOverBCG = _auxiliary->GetHOverBCG();
     Auxiliarydata.HOverBMAC = _auxiliary->GetHOverBMAC();
-    Auxiliarydata.hVRP = _auxiliary->GethVRP();
+    //Auxiliarydata.hVRP = _auxiliary->GethVRP();
     Auxiliarydata.LatitudeRelatPos = _auxiliary->GetLatitudeRelativePosition();
     Auxiliarydata.LongtitudeRelatPos = _auxiliary->GetLongitudeRelativePosition();
     Auxiliarydata.Mach = _auxiliary->GetMach();
@@ -676,7 +676,7 @@ void jsbsim_wrapper_impl::update_aircraft_data()
     Auxiliarydata.QbarUV = _auxiliary->GetqbarUV();
     Auxiliarydata.QbarUW = _auxiliary->GetqbarUW();
     Auxiliarydata.ReynoldsNum = _auxiliary->GetReynoldsNumber();
-    Auxiliarydata.SecondsInDay = _auxiliary->GetSecondsInDay();
+    //Auxiliarydata.SecondsInDay = _auxiliary->GetSecondsInDay();
     Auxiliarydata.TAT_C = _auxiliary->GetTAT_C();
     Auxiliarydata.TotalPressure = _auxiliary->GetTotalPressure();
     Auxiliarydata.TotalTemp = _auxiliary->GetTotalTemperature();
@@ -695,7 +695,6 @@ void jsbsim_wrapper_impl::update_aircraft_data()
     Auxiliarydata.Npilot = { _auxiliary->GetNpilot().Entry(1),_auxiliary->GetNpilot().Entry(2) ,_auxiliary->GetNpilot().Entry(3) };
     Auxiliarydata.Nwcg = { _auxiliary->GetNwcg().Entry(1),_auxiliary->GetNwcg().Entry(2) ,_auxiliary->GetNwcg().Entry(3) };
     Auxiliarydata.PilotAccel = { _auxiliary->GetPilotAccel().Entry(1),_auxiliary->GetPilotAccel().Entry(2) ,_auxiliary->GetPilotAccel().Entry(3) };
-*/
 }
 
 
