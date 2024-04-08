@@ -48,39 +48,48 @@ const double STEPs = STEPns * 1e-9;
 //const double STEPs = 1.0 / 200.0;
 
 
+static ot::jsbsim_root* jsbroot(ot::eng_interface* eng)
+{
+    LOCAL_SINGLETON(ot::jsbsim_root) _root = new ot::jsbsim_root(eng);
+    return _root.get();
+}
+
+
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 jsbsim_wrapper_impl::jsbsim_wrapper_impl(ot::eng_interface* eng, uint object_id)
-    : _jsbroot(ot::jsbsim_root::_inst == 0 ? new ot::jsbsim_root(eng) : ot::jsbsim_root::_inst)
-    , _jsbexec(new FGFDMExec(_jsbroot->get_gc()))
-    , _jsbic(_jsbexec->GetIC())
-    , _atmosphere(_jsbexec->GetAtmosphere())
-    , _FCS(_jsbexec->GetFCS())
-    , _propulsion(_jsbexec->GetPropulsion())
-    , _massBalance(_jsbexec->GetMassBalance())
-    , _aircraft(_jsbexec->GetAircraft())
-    , _propagate(_jsbexec->GetPropagate())
-    , _auxiliary(_jsbexec->GetAuxiliary())
-    , _aerodynamics(_jsbexec->GetAerodynamics())
-    , _groundReactions(_jsbexec->GetGroundReactions())
-    , _inertial(_jsbexec->GetInertial())
-    , _time_rest(0.0f)
-    , _earth_radius(_jsbroot->get_earth_radius())
-    , _props(_jsbexec->GetPropertyManager()->GetNode())
 {
+    _eng_ifc = eng;
+
+    ot::jsbsim_root* root = jsbroot(eng);
+    _jsbexec.reset(new JSBSim::FGFDMExec(root->get_gc()));
+
+    _earth_radius = eng->get_earth_radius();
+
     DASSERT(_jsbexec.get() != 0);
     //_jsbexec->Setdt(integration_step);
     //_jsbexec->SetGroundCallback(ot::jsbsim_root::get().get_gc()); // set in the jsbsim_root!
 
+    _jsbic = _jsbexec->GetIC().get();
+    _inertial = _jsbexec->GetInertial().get();
+    _atmosphere = _jsbexec->GetAtmosphere().get();
+    _FCS = _jsbexec->GetFCS().get();
+    _propulsion = _jsbexec->GetPropulsion().get();
+    _massBalance = _jsbexec->GetMassBalance().get();
+    _aircraft = _jsbexec->GetAircraft().get();
+    _propagate = _jsbexec->GetPropagate().get();
+    _auxiliary = _jsbexec->GetAuxiliary().get();
+    _aerodynamics = _jsbexec->GetAerodynamics().get();
+    _groundReactions = _jsbexec->GetGroundReactions().get();
+    _props = _jsbexec->GetPropertyManager()->GetNode();
+
     _sketch = ot::sketch::get();
     _world = ot::world::get();
 
-    if (_world)
-    {
+    if (_world) {
         _object =_world->get_object(object_id);
     }
-    if (_object)
-    {
+    if (_object) {
         _geomob = _object->get_geomob(0);
     }
 
@@ -92,7 +101,6 @@ jsbsim_wrapper_impl::jsbsim_wrapper_impl(ot::eng_interface* eng, uint object_id)
 jsbsim_wrapper_impl::~jsbsim_wrapper_impl()
 {
     _jsbexec.reset();
-    _jsbroot.release();
 }
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
@@ -238,7 +246,7 @@ void jsbsim_wrapper_impl::update_aircraft_data()
     glm::dmat3x3 ground_j_inv;
 
     float maxdist = float(glm::length(_aircraft_data.pos_ecef));
-    float dist = _jsbroot->get_eng()->elevation_over_terrain(
+    float dist = _eng_ifc->elevation_over_terrain(
         _aircraft_data.pos_ecef,
         maxdist,
         &normal,

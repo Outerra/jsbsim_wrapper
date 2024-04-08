@@ -27,8 +27,8 @@ public:
 
 protected:
 
-    std::shared_ptr<JSBSim::FGGroundCallback> _gc;
-    std::shared_ptr<JSBSim::FGFDMExec> _jsbexec;    //< root FGFDMExec
+    std::shared_ptr<ot::ground_callback> _gc;
+    //std::shared_ptr<JSBSim::FGFDMExec> _jsbexec;    //< root FGFDMExec
     uint _counter = 0;                              //< FGFDMExec instance/ID counter
     eng_interface* _eng = 0;
 
@@ -43,11 +43,10 @@ public:
 
     bool is_initialized() const { return _eng != 0; }
 
-    JSBSim::FGPropertyManager* get_pm() const;
-    uint* get_counter() { DASSERT(!_jsbexec); return &_counter; }
-    double get_earth_radius() const;
+    uint* get_counter() { return &_counter; }
+
     eng_interface* get_eng() const { DASSERT(_eng != 0); return _eng; }
-    ground_callback* get_gc() const;
+    std::shared_ptr<JSBSim::FGGroundCallback> get_gc() const;
 };
 
 } // end of namaspace JSBSim
