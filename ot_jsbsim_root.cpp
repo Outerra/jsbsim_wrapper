@@ -3,6 +3,7 @@
 #include "ot_eng_interface.h"
 
 #include <FGFDMExec.h>
+#include <models/FGInertial.h>
 
 ot::jsbsim_root* ot::jsbsim_root::_inst = 0;
 
@@ -10,7 +11,7 @@ ot::jsbsim_root* ot::jsbsim_root::_inst = 0;
 
 ot::jsbsim_root::jsbsim_root(ot::eng_interface* eng)
     : _gc(new ground_callback(eng))
-    , _jsbexec(new JSBSim::FGFDMExec(_gc))
+    , _jsbexec(new JSBSim::FGFDMExec(_gc.get()))
     , _counter(0)
     , _eng(eng)
 {
@@ -34,10 +35,10 @@ ot::jsbsim_root::jsbsim_root(ot::eng_interface* eng)
 ot::jsbsim_root::~jsbsim_root()
 {
     ot::jsbsim_root::_inst = 0;
-    _jsbexec.release();
+    _jsbexec.reset();
     _gc = 0;
     _eng = 0;
-    JSBSim::FGLocation::SetGroundCallback(0);
+    //JSBSim::FGLocation::SetGroundCallback(0);
 
     if (_cout_buf.is_open()) {
         _cout_buf.close();
@@ -58,8 +59,8 @@ ot::jsbsim_root::~jsbsim_root()
 
 JSBSim::FGPropertyManager* ot::jsbsim_root::get_pm() const
 {
-    DASSERT(!_jsbexec.is_empty());
-    return _jsbexec->GetPropertyManager();
+    DASSERT(_jsbexec);
+    return _jsbexec->GetPropertyManager().get();
 }
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
@@ -74,6 +75,6 @@ double ot::jsbsim_root::get_earth_radius() const
 
 ot::ground_callback* ot::jsbsim_root::get_gc() const
 {
-    DASSERT(_gc.valid());
-    return static_cast<ground_callback*>(_gc.ptr());
+    DASSERT(_gc);
+    return static_cast<ground_callback*>(_gc.get());
 }

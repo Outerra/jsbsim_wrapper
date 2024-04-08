@@ -51,13 +51,8 @@ const double STEPs = STEPns * 1e-9;
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 jsbsim_wrapper_impl::jsbsim_wrapper_impl(ot::eng_interface* eng, uint object_id)
-    : _jsbroot(ot::jsbsim_root::_inst == 0
-        ? new ot::jsbsim_root(eng)
-        : ot::jsbsim_root::_inst)
-    , _jsbexec(new FGFDMExec(
-        _jsbroot->get_gc()
-        /*ot::jsbsim_root::get().get_pm(),
-        ot::jsbsim_root::get().get_counter()*/))
+    : _jsbroot(ot::jsbsim_root::_inst == 0 ? new ot::jsbsim_root(eng) : ot::jsbsim_root::_inst)
+    , _jsbexec(new FGFDMExec(_jsbroot->get_gc()))
     , _jsbic(_jsbexec->GetIC())
     , _atmosphere(_jsbexec->GetAtmosphere())
     , _FCS(_jsbexec->GetFCS())
@@ -96,7 +91,7 @@ jsbsim_wrapper_impl::jsbsim_wrapper_impl(ot::eng_interface* eng, uint object_id)
 
 jsbsim_wrapper_impl::~jsbsim_wrapper_impl()
 {
-    _jsbexec.release();
+    _jsbexec.reset();
     _jsbroot.release();
 }
 
@@ -125,7 +120,7 @@ void jsbsim_wrapper_impl::update_aircraft_data()
 
         for (unsigned int i = 0; i < neng; ++i)
         {
-            FGEngine* eng = _propulsion->GetEngine(i);
+            FGEngine* eng = _propulsion->GetEngine(i).get();
             ot::aircraft_data::engine& data = _aircraft_data.engines[i];
 
             data.rpm = float(eng->GetThruster()->GetRPM());
@@ -260,7 +255,7 @@ void jsbsim_wrapper_impl::update_aircraft_data()
     else
         _aircraft_data.altitude_agl = -1.0f;
 
-
+/*
     //////////// Ground reactions & Gears
 
     ot::aircraft_data::GndReactions GndReactdata;
@@ -282,7 +277,7 @@ void jsbsim_wrapper_impl::update_aircraft_data()
     for (uint i = 0; i < NumCP; i++)
     {
         ot::aircraft_data::Gear& Geardata = _aircraft_data.Gears[i];
-        JSBSim::FGLGear* wheel = _groundReactions->GetGearUnit(i);
+        JSBSim::FGLGear* wheel = _groundReactions->GetGearUnit(i).get();
 
         Geardata.SteerType = get_steer_type(i);
         Geardata.ContactPointPos = get_contact_point_pos(i);
@@ -700,7 +695,7 @@ void jsbsim_wrapper_impl::update_aircraft_data()
     Auxiliarydata.Npilot = { _auxiliary->GetNpilot().Entry(1),_auxiliary->GetNpilot().Entry(2) ,_auxiliary->GetNpilot().Entry(3) };
     Auxiliarydata.Nwcg = { _auxiliary->GetNwcg().Entry(1),_auxiliary->GetNwcg().Entry(2) ,_auxiliary->GetNwcg().Entry(3) };
     Auxiliarydata.PilotAccel = { _auxiliary->GetPilotAccel().Entry(1),_auxiliary->GetPilotAccel().Entry(2) ,_auxiliary->GetPilotAccel().Entry(3) };
-
+*/
 }
 
 
@@ -1190,7 +1185,7 @@ double3 jsbsim_wrapper_impl::get_contact_point_pos(const uint idx)
         const uint n = _groundReactions->GetNumGearUnits();
 
         if (idx < n) {
-            FGLGear* const gear = _groundReactions->GetGearUnit(idx);
+            FGLGear* const gear = _groundReactions->GetGearUnit(idx).get();
             quat georot = _geomob->get_rot();
             double3 pos = _geomob->get_pos();
             float3 gearloc = { gear->GetLocationY(), -gear->GetLocationX(), gear->GetLocationZ() };
@@ -1230,7 +1225,7 @@ float3 jsbsim_wrapper_impl::get_wheel_axis_vel(uint wheel_id)
 
     if (wheel_id < n)
     {
-        JSBSim::FGLGear* gear_unit = _groundReactions->GetGearUnit(wheel_id);
+        JSBSim::FGLGear* gear_unit = _groundReactions->GetGearUnit(wheel_id).get();
         float3 velocities;
 
         velocities.x = gear_unit->GetWheelVel(1);

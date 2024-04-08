@@ -24,9 +24,15 @@ public:
 
     // IMPLEMENTS JSBSim::FGGroundCallback
 
-    double GetAltitude(const JSBSim::FGLocation& l) const override;
-
     double GetAGLevel(
+        double t,
+        const JSBSim::FGLocation& l,
+        JSBSim::FGLocation& cont,
+        JSBSim::FGColumnVector3& n,
+        JSBSim::FGColumnVector3& v,
+        JSBSim::FGColumnVector3& w) const override;
+
+    double GetContact(
         double t,
         double maxdist,
         const JSBSim::FGLocation& l,
@@ -37,11 +43,6 @@ public:
         JSBSim::FGColumnVector3& ground_position,
         double& ground_mass_inverse,
         JSBSim::FGMatrix33& ground_j_inverse) const override;
-
-    double GetTerrainGeoCentRadius(
-        double t, const JSBSim::FGLocation& location) const override;
-
-    double GetSeaLevelRadius(const JSBSim::FGLocation& location) const override;
 };
 
 } // end of namespace ot

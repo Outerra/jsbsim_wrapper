@@ -3,6 +3,7 @@
 
 #include <math/FGLocation.h>
 #include <math/FGColumnVector3.h>
+#include <math/FGMatrix33.h>
 
 #include <ot/glm/glm_ext.h>
 
@@ -29,14 +30,49 @@ ot::ground_callback::~ground_callback() {}
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
-double ot::ground_callback::GetAltitude(const FGLocation& l) const
+double ot::ground_callback::GetAGLevel(
+    double t,
+    const FGLocation& l,
+    FGLocation& c,
+    FGColumnVector3& n,
+    FGColumnVector3& v,
+    FGColumnVector3& w) const
 {
-    return l.GetRadius() - GetTerrainGeoCentRadius(0, FGLocation());
+    double3 pos(l.Entry(1), l.Entry(2), l.Entry(3));
+
+    pos *= F2M();
+    v = w = FGColumnVector3(0, 0, 0);
+
+    float3 normal;
+    double3 surface;
+    float3 vel;
+    float3 rot_vel;
+    double3 ground_pos;
+    double3x3 ground_j_inv;
+
+    float dist = _eng->elevation_over_terrain(
+        pos,
+        DBL_MAX,
+        &normal,
+        &surface,
+        &vel,
+        &rot_vel,
+        0, 0, 0);
+
+    surface *= M2F();
+    vel *= M2F();
+
+    c = FGColumnVector3(surface.x, surface.y, surface.z);
+    n = FGColumnVector3(normal.x, normal.y, normal.z);
+    v = FGColumnVector3(vel.x, vel.y, vel.z);
+    w = FGColumnVector3(rot_vel.x, rot_vel.y, rot_vel.z);
+
+    return dist * M2F();
 }
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
-double ot::ground_callback::GetAGLevel(
+double ot::ground_callback::GetContact(
     double t,
     double maxdist,
     const FGLocation& l,
@@ -95,28 +131,13 @@ double ot::ground_callback::GetAGLevel(
     else {
         c.SetLatitude(l.GetLatitude());
         c.SetLongitude(l.GetLongitude());
-        c.SetRadius(GetTerrainGeoCentRadius(0, FGLocation()));
+        c.SetRadius(l.GetRadius());
         //TODO n=FGColumnVector3(normal.x, normal.y, normal.z);
 
         //_eng->write_log("elevation_over_terrain failed!");
 
         return maxdist;//GetAltitude(l);
     }
-}
-
-//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-
-double ot::ground_callback::GetTerrainGeoCentRadius(
-    double t, const FGLocation& location) const
-{
-    return _earth_radius * M2F();
-}
-
-//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-
-double ot::ground_callback::GetSeaLevelRadius(const FGLocation& location) const
-{
-    return _earth_radius * M2F();
 }
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=

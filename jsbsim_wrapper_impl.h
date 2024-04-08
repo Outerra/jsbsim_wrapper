@@ -11,6 +11,8 @@
 #include <ot/sketch.h>
 #include <ot/world.h>
 
+#include <memory>
+
 
 class eng_interface;
 
@@ -42,18 +44,18 @@ namespace JSBSim {
     protected:
 
         iref<ot::jsbsim_root> _jsbroot;
-        iref<FGFDMExec> _jsbexec;
-        FGInitialCondition* _jsbic;
-        FGAtmosphere* _atmosphere;
-        FGFCS* _FCS;
-        FGPropulsion* _propulsion;
-        FGMassBalance* _massBalance;
-        FGAircraft* _aircraft;
-        FGPropagate* _propagate;
-        FGAuxiliary* _auxiliary;
-        FGAerodynamics* _aerodynamics;
-        FGGroundReactions* _groundReactions;
-        FGInertial* _inertial;
+        std::shared_ptr<FGFDMExec> _jsbexec;
+        std::shared_ptr<FGInitialCondition> _jsbic;
+        std::shared_ptr<FGAtmosphere> _atmosphere;
+        std::shared_ptr<FGFCS> _FCS;
+        std::shared_ptr<FGPropulsion> _propulsion;
+        std::shared_ptr<FGMassBalance> _massBalance;
+        std::shared_ptr<FGAircraft> _aircraft;
+        std::shared_ptr<FGPropagate> _propagate;
+        std::shared_ptr<FGAuxiliary> _auxiliary;
+        std::shared_ptr<FGAerodynamics> _aerodynamics;
+        std::shared_ptr<FGGroundReactions> _groundReactions;
+        std::shared_ptr<FGInertial> _inertial;
 
         /// /////////////////////
 

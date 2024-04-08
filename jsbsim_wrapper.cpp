@@ -2,7 +2,7 @@
 #include "jsbsim_wrapper_api.h"
 #include "ot_jsbsim_root.h"
 
-#include <stdio.h>
+#include <iostream>
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
