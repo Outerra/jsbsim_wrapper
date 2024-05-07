@@ -7,12 +7,7 @@
 
 #include <ot/glm/glm_types.h>
 
-/////////////////////////////////
-#include <ot/sketch.h>
-#include <ot/world.h>
-
 #include <memory>
-
 
 class eng_interface;
 
@@ -57,11 +52,20 @@ namespace JSBSim {
         std::shared_ptr<FGGroundReactions> _groundReactions;
         std::shared_ptr<FGInertial> _inertial;
 
-        /// /////////////////////
-
         //FGEngine* _engine;
 
         ot::aircraft_data _aircraft_data;
+        ot::aircraft_data::GndReactions GndReactdata;
+        ot::aircraft_data::FCS FCSdata;
+        ot::aircraft_data::Propulsion Propdata;
+        ot::aircraft_data::Propagate Propagdata;
+        ot::aircraft_data::Atmosphere Atmosdata;
+        ot::aircraft_data::Accelerations Acceldata;
+        ot::aircraft_data::MassBalance Massbaldata;
+        ot::aircraft_data::Aerodynamics Aerodyndata;
+        ot::aircraft_data::Aircraft Aircraftdata;
+        ot::aircraft_data::Auxiliary Auxiliarydata;
+
         double _time_rest;
         double _earth_radius;
 
@@ -75,13 +79,6 @@ namespace JSBSim {
         quat _prev_rot;
         double3 _prev_vel;
         double3 _prev_pqr;
-
-
-        ///////////////// TMP DEBUG
-        iref<ot::sketch> _sketch = nullptr;
-        iref<ot::world> _world = nullptr;
-        iref<ot::object> _object = nullptr;
-        iref<ot::geomob> _geomob = nullptr;
 
     protected:
 
@@ -159,7 +156,6 @@ namespace JSBSim {
 
         void update(const float dt) override;
 
-        // 0: off, 1: sould be default, 2: full hover mode
         void set_afcs(const int level) override;
 
         bool is_running() const override;
@@ -168,16 +164,16 @@ namespace JSBSim {
         void set_property(const char* name, double value) override;
 
         void set_gear(const bool down) override;
-
-        uint get_num_contact_points(bool gearsonly) override;
-        double3 get_contact_point_pos(const uint idx) override;
-
+        
         void enable_log(bool enable) override;
 
-        //////////////////////////
-        uint get_steer_type(uint id) override;
+        uint get_steer_type(uint wheel_id) override;
+
+        uint get_num_contact_points(bool gearsonly) override;
+
+        float3 get_contact_point_pos(const uint idx, bool gearsonly) override;
+
         float3 get_wheel_axis_vel(uint wheel_id) override;
-        void show_sketch(double3 pos) override;
     };
 
 } // end of namespace JSBSim

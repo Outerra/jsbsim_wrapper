@@ -4,7 +4,6 @@
 
 #include "ot_jsbsim_root.h"
 #include "ot_ground_callback.h"
-
 #include <FGFDMExec.h>
 #include <FGJSBBase.h>
 #include <initialization/FGInitialCondition.h>
@@ -38,7 +37,6 @@
 
 #include "ot_eng_interface.h"
 
-
 using namespace JSBSim;
 
 //const float integration_step = 0.01f;
@@ -49,7 +47,6 @@ const double STEPs = STEPns * 1e-9;
 
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-
 jsbsim_wrapper_impl::jsbsim_wrapper_impl(ot::eng_interface* eng, uint object_id)
     : _jsbroot(ot::jsbsim_root::_inst == 0 ? new ot::jsbsim_root(eng) : ot::jsbsim_root::_inst)
     , _jsbexec(new FGFDMExec(_jsbroot->get_gc()))
@@ -71,18 +68,6 @@ jsbsim_wrapper_impl::jsbsim_wrapper_impl(ot::eng_interface* eng, uint object_id)
     DASSERT(_jsbexec.get() != 0);
     //_jsbexec->Setdt(integration_step);
     //_jsbexec->SetGroundCallback(ot::jsbsim_root::get().get_gc()); // set in the jsbsim_root!
-
-    _sketch = ot::sketch::get();
-    _world = ot::world::get();
-
-    if (_world)
-    {
-        _object =_world->get_object(object_id);
-    }
-    if (_object)
-    {
-        _geomob = _object->get_geomob(0);
-    }
 
     _jsbexec->Setdt(STEPs);
 }
@@ -255,11 +240,7 @@ void jsbsim_wrapper_impl::update_aircraft_data()
     else
         _aircraft_data.altitude_agl = -1.0f;
 
-
     //////////// Ground reactions & Gears
-
-    ot::aircraft_data::GndReactions GndReactdata;
-
     GndReactdata.BumpHeight = _groundReactions->GetBumpHeight();
     GndReactdata.Bumpiness = _groundReactions->GetBumpiness();
     GndReactdata.SteeringCmd = _groundReactions->GetDsCmd();
@@ -280,7 +261,7 @@ void jsbsim_wrapper_impl::update_aircraft_data()
         JSBSim::FGLGear* wheel = _groundReactions->GetGearUnit(i).get();
 
         Geardata.SteerType = get_steer_type(i);
-        Geardata.ContactPointPos = get_contact_point_pos(i);
+        Geardata.ContactPointPos = get_contact_point_pos(i, false);
         Geardata.AxisVelocities = get_wheel_axis_vel(i);
         Geardata.GearWOW = wheel->GetWOW();
         Geardata.GearAnglesToBody = { wheel->GetAnglesToBody().Entry(1),wheel->GetAnglesToBody().Entry(2) ,wheel->GetAnglesToBody().Entry(3) };
@@ -314,11 +295,7 @@ void jsbsim_wrapper_impl::update_aircraft_data()
         }
     }
 
-
     //////////// FCS
-
-    ot::aircraft_data::FCS FCSdata;
-
     FCSdata.LeftAileronPosRad = _FCS->GetDaLPos();
     FCSdata.RightAileronPosRad = _FCS->GetDaRPos();
     FCSdata.ElevatorPosRad = _FCS->GetDePos();
@@ -347,11 +324,7 @@ void jsbsim_wrapper_impl::update_aircraft_data()
     FCSdata.RollTrimCmd = _FCS->GetRollTrimCmd();
     FCSdata.YawTrimCmd = _FCS->GetYawTrimCmd();
 
-
     //////////// Propulsion & Tanks & Engines + EngineFCS
-
-    ot::aircraft_data::Propulsion Propdata;
-
     Propdata.GetActiveEngine = _propulsion->GetActiveEngine();
     Propdata.FuelFreezeStatus = _propulsion->GetFuelFreeze();
     //num of fuel tanks currently actively supplying fuel
@@ -455,9 +428,6 @@ void jsbsim_wrapper_impl::update_aircraft_data()
 
 
     //////////// Propagate
-
-    ot::aircraft_data::Propagate Propagdata;
-
     Propagdata.AltitudeASL = _propagate->GetAltitudeASL();
     Propagdata.AltitudeASLm = _propagate->GetAltitudeASLmeters();
     //retrieves sine of vehicle Euler angle component (Phi - 1, Theta - 2 or Psi - 3)
@@ -501,9 +471,6 @@ void jsbsim_wrapper_impl::update_aircraft_data()
 
 
     //////////// atmosphere
-
-    ot::aircraft_data::Atmosphere Atmosdata;
-
     Atmosdata.AtmosDensity = _atmosphere->GetDensity();
     Atmosdata.AbsoluteViscosity = _atmosphere->GetAbsoluteViscosity();
     Atmosdata.DensityAltitude = _atmosphere->GetDensityAltitude();
@@ -533,8 +500,6 @@ void jsbsim_wrapper_impl::update_aircraft_data()
 
 
     //////////// accelerations
-
-    ot::aircraft_data::Accelerations Acceldata;
     JSBSim::FGAccelerations* _accelerations = _jsbexec->GetAccelerations().get();
 
     Acceldata.GravAccelMagnitude = _accelerations->GetGravAccelMagnitude();
@@ -563,9 +528,6 @@ void jsbsim_wrapper_impl::update_aircraft_data()
 
 
     //////////// MassBalance
-
-    ot::aircraft_data::MassBalance Massbaldata;
-
     Massbaldata.EmptyWeight = _massBalance->GetEmptyWeight();
     Massbaldata.Mass = _massBalance->GetMass();
     Massbaldata.PointMassWeight = _massBalance->GetTotalPointMassWeight();
@@ -578,9 +540,6 @@ void jsbsim_wrapper_impl::update_aircraft_data()
 
 
     //////////// Aerodynamics
-
-    ot::aircraft_data::Aerodynamics Aerodyndata;
-
     Aerodyndata.AlphaCLmax = _aerodynamics->GetAlphaCLMax();
     Aerodyndata.AlphaCLmin = _aerodynamics->GetAlphaCLMin();
     Aerodyndata.AlphaW = _aerodynamics->GetAlphaW();
@@ -617,10 +576,6 @@ void jsbsim_wrapper_impl::update_aircraft_data()
 */
 
     //////////// Aircraft
-
-
-    ot::aircraft_data::Aircraft Aircraftdata;
-
     Aircraftdata.Cbar = _aircraft->Getcbar();
     Aircraftdata.HtailArea = _aircraft->GetHTailArea();
     Aircraftdata.HtailArm = _aircraft->GetHTailArm();
@@ -648,9 +603,6 @@ void jsbsim_wrapper_impl::update_aircraft_data()
 
 
     //////////// Auxiliary
-
-    ot::aircraft_data::Auxiliary Auxiliarydata;
-
     //Auxiliarydata.DayOfYear = _auxiliary->GetDayOfYear();
     Auxiliarydata.AuxAdot = _auxiliary->Getadot();
     Auxiliarydata.AuxAlpha = _auxiliary->Getalpha();
@@ -1153,8 +1105,25 @@ void jsbsim_wrapper_impl::set_gear(const bool down)
 }
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-//if bool parameter is false, return all contact points ( "BOGEY" (on gears) and "STRUCTURE" (on wings) )
-//if bool parameter is true, return only gear/bogey contact points
+
+//returned steer types: 0 - steerable, 1 - fix, 2 - caster
+uint jsbsim_wrapper_impl::get_steer_type(uint wheel_id)
+{
+    int steer_type;
+    const uint n = _groundReactions->GetNumGearUnits();
+
+    if (wheel_id < n)
+    {
+        steer_type = _groundReactions->GetGearUnit(wheel_id)->GetSteerType();
+        return steer_type;
+    }
+
+    return uint();
+}
+
+//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+//If "gearsonly" is true, return only gear/bogey contact points, otherwise return all contact points ( "BOGEY" (on gears) and "STRUCTURE" (other contact points, e.g. wing tip, nose etc.) )
 uint jsbsim_wrapper_impl::get_num_contact_points(bool gearsonly)
 {
     int contact_point_count = _groundReactions->GetNumGearUnits();
@@ -1165,7 +1134,10 @@ uint jsbsim_wrapper_impl::get_num_contact_points(bool gearsonly)
 
         for (int i = 0; i < contact_point_count; i++)
         {
-            gearcount += _groundReactions->GetGearUnit(i)->IsBogey();
+            if (_groundReactions->GetGearUnit(i)->IsBogey())
+            {
+                gearcount++;
+            }
         }
         return gearcount;
     }
@@ -1177,46 +1149,43 @@ uint jsbsim_wrapper_impl::get_num_contact_points(bool gearsonly)
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
-double3 jsbsim_wrapper_impl::get_contact_point_pos(const uint idx)
+//Get model position of contact points in meters 
+//The position is relative to VRP point 
+//If "gearsonly" is true, return only gear/bogey contact points, otherwise return all contact points ( "BOGEY" (on gears) and "STRUCTURE" (other contact points, e.g. wing tip, nose etc.) )
+float3 jsbsim_wrapper_impl::get_contact_point_pos(const uint idx, bool gearsonly)
 {
-    if (_geomob)
-    {
-        const uint n = _groundReactions->GetNumGearUnits();
-
-        if (idx < n) {
-            FGLGear* const gear = _groundReactions->GetGearUnit(idx).get();
-            quat georot = _geomob->get_rot();
-            double3 pos = _geomob->get_pos();
-            float3 gearloc = { gear->GetLocationY(), -gear->GetLocationX(), gear->GetLocationZ() };
-            //from inch to meters
-            gearloc *= 0.0254f;
-            //change the original rotation, to the object rotation
-            float3 newgearloc = glm::rotate(georot, float3(gearloc));
-            //gear location is local, therefore add game object location
-            pos += double3(newgearloc.x, newgearloc.y, newgearloc.z);
-
-            return pos;
-        }
-    }
-    return double3();
-}
-
-//uint id = wheel id
-//returned steer types: 0 - steerable  ; 1 - fix, 2- caster
-uint jsbsim_wrapper_impl::get_steer_type(uint id)
-{
-    int steer_type;
     const uint n = _groundReactions->GetNumGearUnits();
 
-    if (id < n)
+    if (idx >= n)
     {
-        steer_type = _groundReactions->GetGearUnit(id)->GetSteerType();
-        return steer_type;
+        return float3();
     }
 
-    return uint();
+    FGLGear* const gear = _groundReactions->GetGearUnit(idx).get();
+
+    if (!gear)
+    {
+        return float3();
+    }
+
+    if (gearsonly && !gear->IsBogey())
+    {
+        return float3();
+    }
+
+    //VRP point should now be the 3D model 0,0,0
+    float3 vrp_point = { Aircraftdata.AircraftXYRvrp.y, -Aircraftdata.AircraftXYRvrp.x , Aircraftdata.AircraftXYRvrp.z };
+    vrp_point *= 0.0254f;
+
+    // GetLocation returns position in inch
+    float3 gearloc = { gear->GetLocationY(), -gear->GetLocationX(), gear->GetLocationZ() };
+    //from inch to meters
+    gearloc *= 0.0254f;
+
+    return (gearloc - vrp_point);
 }
 
+//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 float3 jsbsim_wrapper_impl::get_wheel_axis_vel(uint wheel_id)
 {
@@ -1225,8 +1194,8 @@ float3 jsbsim_wrapper_impl::get_wheel_axis_vel(uint wheel_id)
     if (wheel_id < n)
     {
         JSBSim::FGLGear* gear_unit = _groundReactions->GetGearUnit(wheel_id).get();
+        
         float3 velocities;
-
         velocities.x = gear_unit->GetWheelVel(1);
         velocities.y = gear_unit->GetWheelVel(2);
         velocities.z = gear_unit->GetWheelVel(3);
@@ -1235,40 +1204,6 @@ float3 jsbsim_wrapper_impl::get_wheel_axis_vel(uint wheel_id)
     }
 
     return float3();
-}
-
-void jsbsim_wrapper_impl::show_sketch(double3 pos)
-{
-    if (_sketch && _geomob)
-    {
-        uint idgroup = _sketch->create_group();
-        _sketch->set_xray_mode(true);
-
-        _sketch->set_position(pos);
-        _sketch->set_rotation(_geomob->get_rot());
-
-        uint canvasid = _sketch->create_canvas(idgroup, { 0,0,0 });
-        _sketch->make_canvas_active(canvasid);
-
-        float3 x_axis = { 1,0,0 };
-        float3 y_axis = { 0,1,0 };
-        float3 z_axis = { 0,0,1 };
-
-        _sketch->set_color({ 255,0,0 });
-        float3 offset = { 0, 0, 0 };
-        _sketch->draw_line(offset, true);
-        _sketch->draw_line(offset + x_axis);
-
-        _sketch->set_color({ 0,255,0 });
-        _sketch->draw_line(offset, true);
-        _sketch->draw_line(offset + y_axis);
-
-        _sketch->set_color({ 0,0,255 });
-        _sketch->draw_line(offset, true);
-        _sketch->draw_line(offset + z_axis);
-
-        _sketch->delete_group(idgroup);
-    }
 }
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=

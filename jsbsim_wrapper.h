@@ -88,19 +88,20 @@ namespace JSBSim {
         virtual bool is_running() const = 0;
 
         virtual double get_property(const char* name) = 0;
+        
         virtual void set_property(const char* name, double value) = 0;
 
         virtual void set_gear(const bool down) = 0;
 
-        virtual uint get_num_contact_points(bool gearsonly) = 0;
-        virtual double3 get_contact_point_pos(const uint idx) = 0;
-
         virtual void enable_log(bool enable) = 0;
+        
+        virtual uint get_steer_type(uint wheel_id) = 0;
+        
+        virtual uint get_num_contact_points(bool gearsonly) = 0;
 
-        /// ////////////////////////////
-        virtual uint get_steer_type(uint id) = 0;
+        virtual float3 get_contact_point_pos(const uint idx, bool gearsonly) = 0;
+
         virtual float3 get_wheel_axis_vel(uint wheel_id) = 0;
-        virtual void show_sketch(double3 pos) = 0;
     };
 
 } // end of namespace
