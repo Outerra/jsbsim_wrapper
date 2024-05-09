@@ -36,24 +36,25 @@ namespace JSBSim {
     class jsbsim_wrapper_impl
         : public jsbsim_wrapper
     {
-    protected:
+    private:
 
-        iref<ot::jsbsim_root> _jsbroot;
         std::shared_ptr<FGFDMExec> _jsbexec;
-        std::shared_ptr<FGInitialCondition> _jsbic;
-        std::shared_ptr<FGAtmosphere> _atmosphere;
-        std::shared_ptr<FGFCS> _FCS;
-        std::shared_ptr<FGPropulsion> _propulsion;
-        std::shared_ptr<FGMassBalance> _massBalance;
-        std::shared_ptr<FGAircraft> _aircraft;
-        std::shared_ptr<FGPropagate> _propagate;
-        std::shared_ptr<FGAuxiliary> _auxiliary;
-        std::shared_ptr<FGAerodynamics> _aerodynamics;
-        std::shared_ptr<FGGroundReactions> _groundReactions;
-        std::shared_ptr<FGInertial> _inertial;
 
-        //FGEngine* _engine;
+        FGInitialCondition* _jsbic = 0;
+        FGInertial* _inertial = 0;
+        FGAtmosphere* _atmosphere = 0;
+        FGFCS* _FCS = 0;
+        FGPropulsion* _propulsion = 0;
+        FGMassBalance* _massBalance = 0;
+        FGAircraft* _aircraft = 0;
+        FGPropagate* _propagate = 0;
+        FGAuxiliary* _auxiliary = 0;
+        FGAerodynamics* _aerodynamics = 0;
+        FGGroundReactions* _groundReactions = 0;
 
+        /// /////////////////////
+
+        ot::eng_interface* _eng_ifc = 0;
         ot::aircraft_data _aircraft_data;
         ot::aircraft_data::GndReactions GndReactdata;
         ot::aircraft_data::FCS FCSdata;
@@ -69,7 +70,9 @@ namespace JSBSim {
         double _time_rest;
         double _earth_radius;
 
-        FGPropertyNode* _props;
+        FGPropertyNode* _props = 0;
+
+
 
         //double3 _accum_vel;
         //double3 _accum_avel;
