@@ -194,7 +194,6 @@
     <ClInclude Include="ot_eng_interface.h" />
     <ClInclude Include="ot_jsbsim_root.h" />
     <ClInclude Include="jsbsim_wrapper.h" />
-    <ClInclude Include="jsbsim_wrapper_api.h" />
     <ClInclude Include="jsbsim_wrapper_impl.h" />
     <ClInclude Include="ot_ground_callback.h" />
   </ItemGroup>
