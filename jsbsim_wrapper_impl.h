@@ -75,6 +75,7 @@ protected:
     static double F2M() { return 1.0 / M2F(); }
 
 public:
+    COIDNEWDELETE(jsbsim_wrapper_impl);
 
     jsbsim_wrapper_impl(ot::eng_interface* eng);
     virtual ~jsbsim_wrapper_impl();
