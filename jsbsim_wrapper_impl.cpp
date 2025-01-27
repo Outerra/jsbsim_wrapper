@@ -1117,9 +1117,113 @@ void jsbsim_wrapper_impl::set_property(const char* name, double value)
     _props->SetDouble(name, value);
 }
 
-jsbsim_wrapper::property jsbsim_wrapper_impl::root()
+//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+
+void jsbsim_wrapper_impl::root()
 {
-    return property(_props);
+    //_property_stack.resize(1)[0].child_index = 0;
+}
+
+bool jsbsim_wrapper_impl::prop_first_child()
+{
+    auto* cur = _property_stack.last();
+    if (cur->child_count == 0)
+        return false;
+
+    SGPropertyNode* node = cur->node->getChild(0);
+    if (!node)
+        return false;
+
+    auto* next = _property_stack.add();
+    cur = next - 1;
+    next->node = node;
+    next->child_index = 0;
+    next->child_count = node->nChildren();
+
+    return true;
+}
+
+bool jsbsim_wrapper_impl::prop_next_sibling()
+{
+    if (_property_stack.size() <= 1)
+        return false;
+
+    auto* cur = _property_stack.last();
+    auto* par = cur - 1;
+
+    uint nextid = par->child_index + 1;
+    if (nextid >= par->child_count)
+        return false; //no more
+
+    SGPropertyNode* node = par->node->getChild(nextid);
+    if (!node)
+        return false;
+
+    cur->node = node;
+    cur->child_index = nextid;
+
+    return true;
+}
+
+bool jsbsim_wrapper_impl::prop_parent()
+{
+    if (_property_stack.size() <= 1)
+        return false;
+
+    _property_stack.pop();
+    _property_stack.last()->child_index = 0;
+    return true;
+}
+
+coid::token jsbsim_wrapper_impl::prop_name() const
+{
+    const std::string& name = _property_stack.last()->node->getNameString();
+    return coid::token(name.c_str(), name.length());
+}
+
+jsbsim_prop_type jsbsim_wrapper_impl::prop_type() const
+{
+    return (jsbsim_prop_type)_property_stack.last()->node->getType();
+}
+
+double jsbsim_wrapper_impl::prop_get_double_value() const
+{
+    return _property_stack.last()->node->getDoubleValue();
+}
+
+bool jsbsim_wrapper_impl::prop_get_bool_value() const
+{
+    return _property_stack.last()->node->getBoolValue();
+}
+
+bool jsbsim_wrapper_impl::prop_set_double_value(double value)
+{
+    return _property_stack.last()->node->setDoubleValue(value);
+}
+
+bool jsbsim_wrapper_impl::prop_set_bool_value(bool value)
+{
+    return _property_stack.last()->node->setBoolValue(value);
+}
+
+bool jsbsim_wrapper_impl::prop_add_child(const coid::token& name, int index)
+{
+    auto* cur = _property_stack.last();
+    SGPropertyNode* node = cur->node->addChild(std::string(name.ptr(), name.len()), index);
+    if (!node)
+        return false;
+
+    auto* next = _property_stack.add();
+    cur = next - 1;
+    next->node = node;
+    next->child_index = 0;
+    next->child_count = 0;
+
+    cur->child_count = node->nChildren();
+    cur->child_index = cur->child_count - 1;
+
+    return true;
 }
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=

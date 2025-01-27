@@ -34,6 +34,8 @@ namespace JSBSim {
     class FGPropertyNode;
 }
 
+class SGPropertyNode;
+
 
 class jsbsim_wrapper_impl
     : public jsbsim_wrapper
@@ -69,6 +71,15 @@ private:
     quat _prev_rot;
     double3 _prev_vel;
     double3 _prev_pqr;
+
+    struct prop_stack_entry {
+        SGPropertyNode* node = 0;
+        uint child_index = 0;
+        uint child_count = 0;
+    };
+
+    coid::dynarray32<prop_stack_entry> _property_stack;
+
 
 protected:
 
@@ -154,8 +165,33 @@ public:
     double get_property(const char* name) override;
     void set_property(const char* name, double value) override;
 
-    property root() override;
 
+    /// @brief reset current property to root
+    void root();
+
+    /// @brief move current property to the first child of current property
+    /// @return false if there's no child
+    bool prop_first_child();
+
+    /// @brief move current property to the next sibling of current property
+    /// @return false if there's no next sibling
+    bool prop_next_sibling();
+
+    /// @brief move current property to the parent of current property
+    /// @return false if this was the root
+    bool prop_parent();
+
+    /// @return current property name 
+    coid::token prop_name() const;
+    jsbsim_prop_type prop_type() const;
+
+    double prop_get_double_value() const;
+    bool prop_get_bool_value() const;
+
+    bool prop_set_double_value(double value);
+    bool prop_set_bool_value(bool value);
+
+    bool prop_add_child(const coid::token& name, int min_index);
 
     void set_gear(const bool down) override;
 

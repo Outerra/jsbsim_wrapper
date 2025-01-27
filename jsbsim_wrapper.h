@@ -3,7 +3,6 @@
 #define __JSBSIM_WRAPPER_H__
 
 #include <comm/token.h>
-#include <comm/dynarray.h>
 #include <ot/glm/glm_types.h>
 
 namespace ot {
@@ -11,31 +10,30 @@ namespace ot {
     struct aircraft_data;
 }
 
+enum class jsbsim_prop_type {
+    NONE = 0,   /**< The node hasn't been assigned a value yet. */
+    ALIAS,      /**< The node "points" to another node. */
+    BOOL,
+    INT,
+    LONG,
+    FLOAT,
+    DOUBLE,
+    STRING,
+    UNSPECIFIED,
+    EXTENDED, /**< The node's value is not stored in the property;
+               * the actual value and type is retrieved from an
+               * SGRawValue node. This type is never returned by @see
+               * SGPropertyNode::getType.
+               */
+               // Extended properties
+    VEC3D,
+    VEC4D
+};
+
+
 class jsbsim_wrapper
 {
 public:
-
-    struct property
-    {
-        property(void* handle) : handle(handle) {}
-
-        virtual coid::token name() const;
-
-        virtual double get_double_value() const;
-        virtual bool get_bool_value() const;
-
-        virtual void set_value(double value);
-        virtual void set_value(bool value);
-
-        virtual property add_child_property(const coid::token& name, int index = 0);
-
-        virtual void get_children_properties(coid::dynarray<property>& list) const;
-
-    protected:
-
-        void* handle = 0;
-    };
-
 
     virtual bool load_aircraft(
         const coid::token& root_dir,
@@ -107,7 +105,32 @@ public:
 
     virtual void set_property(const char* name, double value) = 0;
 
-    virtual property root() = 0;
+    /// @brief reset current property to root
+    virtual void root() = 0;
+
+    /// @brief move current property to the first child of current property
+    /// @return false if there's no child
+    virtual bool prop_first_child() = 0;
+
+    /// @brief move current property to the next sibling of current property
+    /// @return false if there's no next sibling
+    virtual bool prop_next_sibling() = 0;
+
+    /// @brief move current property to the parent of current property
+    /// @return false if this was the root
+    virtual bool prop_parent() = 0;
+
+    /// @return current property name 
+    virtual coid::token prop_name() const = 0;
+    virtual jsbsim_prop_type prop_type() const = 0;
+
+    virtual double prop_get_double_value() const = 0;
+    virtual bool prop_get_bool_value() const = 0;
+
+    virtual bool prop_set_double_value(double value) = 0;
+    virtual bool prop_set_bool_value(bool value) = 0;
+
+    virtual bool prop_add_child(const coid::token& name, int min_index) = 0;
 
     virtual void set_gear(const bool down) = 0;
 
