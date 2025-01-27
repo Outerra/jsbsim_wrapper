@@ -123,6 +123,7 @@ public:
     /// @return current property name 
     virtual coid::token prop_name() const = 0;
     virtual jsbsim_prop_type prop_type() const = 0;
+    virtual int prop_index() const = 0;
 
     virtual double prop_get_double_value() const = 0;
     virtual bool prop_get_bool_value() const = 0;

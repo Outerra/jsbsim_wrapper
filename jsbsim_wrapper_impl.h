@@ -184,6 +184,7 @@ public:
     /// @return current property name 
     coid::token prop_name() const;
     jsbsim_prop_type prop_type() const;
+    int prop_index() const;
 
     double prop_get_double_value() const;
     bool prop_get_bool_value() const;

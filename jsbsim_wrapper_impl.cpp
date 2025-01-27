@@ -80,6 +80,10 @@ jsbsim_wrapper_impl::jsbsim_wrapper_impl(ot::eng_interface* eng)
     _groundReactions = _jsbexec->GetGroundReactions().get();
     _props = _jsbexec->GetPropertyManager()->GetNode();
 
+    auto top = _property_stack.add(1);
+    top->node = _props;
+    top->child_count = _props->nChildren();
+
     _jsbexec->Setdt(STEPs);
 }
 
@@ -1136,10 +1140,12 @@ bool jsbsim_wrapper_impl::prop_first_child()
         return false;
 
     auto* next = _property_stack.add();
-    cur = next - 1;
     next->node = node;
     next->child_index = 0;
     next->child_count = node->nChildren();
+
+    cur = next - 1;
+    cur->child_index = 0;
 
     return true;
 }
@@ -1161,7 +1167,8 @@ bool jsbsim_wrapper_impl::prop_next_sibling()
         return false;
 
     cur->node = node;
-    cur->child_index = nextid;
+    cur->child_count = node->nChildren();
+    par->child_index = nextid;
 
     return true;
 }
@@ -1185,6 +1192,11 @@ coid::token jsbsim_wrapper_impl::prop_name() const
 jsbsim_prop_type jsbsim_wrapper_impl::prop_type() const
 {
     return (jsbsim_prop_type)_property_stack.last()->node->getType();
+}
+
+int jsbsim_wrapper_impl::prop_index() const
+{
+    return _property_stack.last()->node->getIndex();
 }
 
 double jsbsim_wrapper_impl::prop_get_double_value() const
