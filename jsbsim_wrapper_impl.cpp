@@ -59,7 +59,7 @@ jsbsim_wrapper_impl::jsbsim_wrapper_impl(ot::eng_interface* eng)
     _eng_ifc = eng;
 
     ot::jsbsim_root* root = jsbroot(eng);
-    _jsbexec.reset(new JSBSim::FGFDMExec(root->get_gc()));
+    _jsbexec.reset(new JSBSim::FGFDMExec(root->get_gc().get()));
 
     _earth_radius = eng->get_earth_radius();
 
@@ -1115,6 +1115,11 @@ double jsbsim_wrapper_impl::get_property(const char* name)
 void jsbsim_wrapper_impl::set_property(const char* name, double value)
 {
     _props->SetDouble(name, value);
+}
+
+jsbsim_wrapper::property jsbsim_wrapper_impl::root()
+{
+    return property(_props);
 }
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=

@@ -34,6 +34,7 @@ namespace JSBSim {
     class FGPropertyNode;
 }
 
+
 class jsbsim_wrapper_impl
     : public jsbsim_wrapper
 {
@@ -152,6 +153,9 @@ public:
 
     double get_property(const char* name) override;
     void set_property(const char* name, double value) override;
+
+    property root() override;
+
 
     void set_gear(const bool down) override;
 

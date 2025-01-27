@@ -216,6 +216,7 @@
     <ClCompile Include="jsbsim_wrapper_impl.cpp" />
     <ClCompile Include="ot_ground_callback.cpp" />
     <ClCompile Include="ot_jsbsim_root.cpp" />
+    <ClCompile Include="property_impl.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\comm\_build\msvc\2022\comm_static.vcxproj">

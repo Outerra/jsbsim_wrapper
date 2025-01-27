@@ -3,6 +3,7 @@
 #define __JSBSIM_WRAPPER_H__
 
 #include <comm/token.h>
+#include <comm/dynarray.h>
 #include <ot/glm/glm_types.h>
 
 namespace ot {
@@ -13,6 +14,28 @@ namespace ot {
 class jsbsim_wrapper
 {
 public:
+
+    struct property
+    {
+        property(void* handle) : handle(handle) {}
+
+        virtual coid::token name() const;
+
+        virtual double get_double_value() const;
+        virtual bool get_bool_value() const;
+
+        virtual void set_value(double value);
+        virtual void set_value(bool value);
+
+        virtual property add_child_property(const coid::token& name, int index = 0);
+
+        virtual void get_children_properties(coid::dynarray<property>& list) const;
+
+    protected:
+
+        void* handle = 0;
+    };
+
 
     virtual bool load_aircraft(
         const coid::token& root_dir,
@@ -83,6 +106,8 @@ public:
     virtual double get_property(const char* name) = 0;
 
     virtual void set_property(const char* name, double value) = 0;
+
+    virtual property root() = 0;
 
     virtual void set_gear(const bool down) = 0;
 
